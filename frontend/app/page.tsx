@@ -3,6 +3,7 @@ import { useState } from "react";
 import { runPipeline, getReport, type CycleReport } from "@/lib/api";
 import { UploadForm } from "@/components/UploadForm";
 import { ReportView } from "@/components/ReportView";
+import { Button, ErrorNote, PageHeader } from "@/components/ui";
 
 export default function Home() {
   const [cycleId, setCycleId] = useState("2026-W32");
@@ -35,18 +36,39 @@ export default function Home() {
   }
 
   return (
-    <main style={{ maxWidth: 900, margin: "0 auto", padding: 24 }}>
-      <h1>marketing-agent</h1>
-      <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 16 }}>
-        <label>회차: <input value={cycleId} onChange={(e) => setCycleId(e.target.value)} /></label>
-        <button onClick={handleLoadExisting}>불러오기</button>
-        <button onClick={handleRun} disabled={busy}>{busy ? "실행 중..." : "파이프라인 실행"}</button>
+    <>
+      <PageHeader
+        title="marketing-agent"
+        description="영업/마케팅 자료를 업로드하고 현황진단·타임라인·Action Items를 생성합니다."
+      />
+
+      <div className="mb-6 flex flex-wrap items-center gap-3">
+        <label className="flex items-center gap-2 text-sm text-zinc-300">
+          회차
+          <input
+            value={cycleId}
+            onChange={(e) => setCycleId(e.target.value)}
+            className="rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-1.5 text-sm text-zinc-100 outline-none focus:border-sky-500"
+          />
+        </label>
+        <Button variant="secondary" size="sm" onClick={handleLoadExisting}>
+          불러오기
+        </Button>
+        <Button size="sm" onClick={handleRun} disabled={busy}>
+          {busy ? "실행 중..." : "파이프라인 실행"}
+        </Button>
       </div>
 
-      <UploadForm cycleId={cycleId} onUploaded={() => {}} />
+      <div className="mb-6">
+        <UploadForm cycleId={cycleId} onUploaded={() => {}} />
+      </div>
 
-      {error && <p style={{ color: "#f66" }}>{error}</p>}
-      {report && <div style={{ marginTop: 24 }}><ReportView report={report} /></div>}
-    </main>
+      {error && (
+        <div className="mb-6">
+          <ErrorNote message={error} />
+        </div>
+      )}
+      {report && <ReportView report={report} />}
+    </>
   );
 }

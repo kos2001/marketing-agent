@@ -2,9 +2,9 @@
   "name": "marketing-agent-frontend",
   "private": true,
   "scripts": {
-    "dev": "next dev -p 3001",
+    "dev": "next dev -p 3011",
     "build": "next build",
-    "start": "next start -p 3001",
+    "start": "next start -p 3011",
     "test": "vitest run"
   },
   "dependencies": {
@@ -16,6 +16,8 @@
     "typescript": "^5.5.0",
     "@types/react": "^19.0.0",
     "@types/node": "^22.0.0",
-    "vitest": "^2.0.0"
+    "vitest": "^2.0.0",
+    "tailwindcss": "^4",
+    "@tailwindcss/postcss": "^4"
   }
 }

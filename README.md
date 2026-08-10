@@ -10,11 +10,16 @@
 
 ```sh
 scripts/setup.sh
-cd backend && .venv/bin/uvicorn app.main:app --reload --port 8001 &
-cd frontend && npm run dev
+cd backend && .venv/bin/uvicorn app.main:app --reload --port 8012 &
+cd frontend && NEXT_PUBLIC_API_BASE=http://localhost:8012 npm run dev
 ```
 
-화면: http://localhost:3001 · API: http://localhost:8001/docs
+화면: http://localhost:3011 · API: http://localhost:8012/docs
+
+> 포트는 8012/3011을 쓴다(기본 8001/3001이 아니다) — 이 머신에서
+> `weekly-report-harness`의 Docker 컨테이너가 이미 8001·3001을 점유하고 있어
+> 충돌한다. 다른 머신에서 그 충돌이 없다면 원하는 포트로 자유롭게 바꿔도 된다;
+> 프런트는 `NEXT_PUBLIC_API_BASE`로, 백엔드는 `uvicorn --port`로 지정한다.
 
 `backend/.env`의 `MA_LLM_BASE_URL`/`MA_LLM_API_KEY`/`MA_LLM_MODEL`을 채우기
 전에는 `/pipeline/run`이 LLM 호출에서 실패한다 — `/sources`, `/cycles`,
