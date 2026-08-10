@@ -1,0 +1,11 @@
+# hermes 프로파일 config.yaml 에 넣을 api_server 설정 조각.
+# (~/.hermes/profiles/marketing-agent/config.yaml 의 platforms: 블록에 병합)
+#
+# 참고: 프로파일 .env 의 API_SERVER_KEY 가 이 token 보다 우선한다.
+platforms:
+  api_server:
+    enabled: true
+    token: "<API_SERVER_KEY — scripts/setup_hermes_profile.sh 가 생성>"
+    extra:
+      port: 8654
+      host: 127.0.0.1

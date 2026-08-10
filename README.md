@@ -20,6 +20,34 @@ cd frontend && npm run dev
 전에는 `/pipeline/run`이 LLM 호출에서 실패한다 — `/sources`, `/cycles`,
 `/health` 등 나머지 라우트는 LLM 없이도 동작한다.
 
+### LLM 연동 — hermes-agent `marketing-agent` 프로파일
+
+이 저장소는 `weekly-report-harness`와 같은 방식으로 전용 hermes-agent 프로파일을
+쓴다. LLM 호출은 hermes-gateway를 거치지 않고 hermes-agent의 api_server에
+직접 붙는다(1차 범위 — gateway 경유는 다중 인스턴스가 필요해지면 추가).
+
+```sh
+scripts/setup_hermes_profile.sh          # dry-run 으로 작업 확인
+scripts/setup_hermes_profile.sh --apply  # marketing-agent 프로파일 생성 (:8654)
+hermes -p marketing-agent gateway restart
+curl -s http://127.0.0.1:8654/health
+```
+
+프로파일의 인격·정확도 규율은 `backend/profiles/marketing-agent/SOUL.md`에
+있다(독립 재도출·축자 인용·판단 보류 표기 등 이 저장소의 정확도 규율을 그대로
+반영). `hermes -p marketing-agent config set model.default <model>` 로 모델을
+지정해야 한다(프로파일 생성 직후에는 비어 있다). 마지막으로
+`backend/.env`에 다음을 채운다:
+
+```
+MA_LLM_BASE_URL=http://127.0.0.1:8654/v1
+MA_LLM_API_KEY=<setup_hermes_profile.sh 가 생성한 API_SERVER_KEY>
+MA_LLM_MODEL=marketing-agent
+```
+
+실측(2026-08-11): 이메일/인스타그램 성과 텍스트 1건으로 `/pipeline/run`을
+실행해 D1~D3·V·V2·Action Items·총평이 축자 인용과 함께 정상 생성됨을 확인했다.
+
 ## 아키텍처
 
 원문 업로드 → 정규화 → 병렬 진단(D1 현황진단 ∥ D2 기회·리스크 ∥ D3 Critical
