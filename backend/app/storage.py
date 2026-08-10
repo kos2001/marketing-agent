@@ -1,0 +1,63 @@
+from __future__ import annotations
+import sqlite3
+from .schemas import SourceDoc, CycleReport
+
+
+class Store:
+    def __init__(self, path: str):
+        self._conn = sqlite3.connect(path)
+        self._conn.execute(
+            "CREATE TABLE IF NOT EXISTS sources ("
+            "id TEXT PRIMARY KEY, cycle_id TEXT, title TEXT, text TEXT)"
+        )
+        self._conn.execute(
+            "CREATE TABLE IF NOT EXISTS reports ("
+            "cycle_id TEXT PRIMARY KEY, seq INTEGER, data TEXT)"
+        )
+        self._conn.commit()
+
+    def add_source(self, doc: SourceDoc) -> None:
+        self._conn.execute(
+            "INSERT OR REPLACE INTO sources (id, cycle_id, title, text) VALUES (?, ?, ?, ?)",
+            (doc.id, doc.cycle_id, doc.title, doc.text),
+        )
+        self._conn.commit()
+
+    def sources_for_cycle(self, cycle_id: str) -> list[SourceDoc]:
+        rows = self._conn.execute(
+            "SELECT id, cycle_id, title, text FROM sources WHERE cycle_id = ?", (cycle_id,)
+        ).fetchall()
+        return [SourceDoc(id=r[0], cycle_id=r[1], title=r[2], text=r[3]) for r in rows]
+
+    def save_report(self, report: CycleReport) -> None:
+        seq_row = self._conn.execute("SELECT COALESCE(MAX(seq), 0) FROM reports").fetchone()
+        existing = self._conn.execute(
+            "SELECT seq FROM reports WHERE cycle_id = ?", (report.cycle_id,)
+        ).fetchone()
+        seq = existing[0] if existing else seq_row[0] + 1
+        self._conn.execute(
+            "INSERT OR REPLACE INTO reports (cycle_id, seq, data) VALUES (?, ?, ?)",
+            (report.cycle_id, seq, report.model_dump_json()),
+        )
+        self._conn.commit()
+
+    def get_report(self, cycle_id: str) -> CycleReport | None:
+        row = self._conn.execute(
+            "SELECT data FROM reports WHERE cycle_id = ?", (cycle_id,)
+        ).fetchone()
+        return CycleReport.model_validate_json(row[0]) if row else None
+
+    def list_cycles(self) -> list[str]:
+        rows = self._conn.execute("SELECT cycle_id FROM reports ORDER BY seq ASC").fetchall()
+        return [r[0] for r in rows]
+
+    def prior_cycles(self, cycle_id: str) -> list[str]:
+        row = self._conn.execute(
+            "SELECT seq FROM reports WHERE cycle_id = ?", (cycle_id,)
+        ).fetchone()
+        if not row:
+            return [c for c in self.list_cycles() if c != cycle_id]
+        rows = self._conn.execute(
+            "SELECT cycle_id FROM reports WHERE seq < ? ORDER BY seq ASC", (row[0],)
+        ).fetchall()
+        return [r[0] for r in rows]
