@@ -5,7 +5,11 @@ from .schemas import SourceDoc, CycleReport
 
 class Store:
     def __init__(self, path: str):
-        self._conn = sqlite3.connect(path)
+        # check_same_thread=False: FastAPI runs sync path operations in a
+        # threadpool, so the connection created at startup is used from
+        # multiple worker threads. Writes are already serialized by the
+        # single connection + GIL; no concurrent-write handling needed here.
+        self._conn = sqlite3.connect(path, check_same_thread=False)
         self._conn.execute(
             "CREATE TABLE IF NOT EXISTS sources ("
             "id TEXT PRIMARY KEY, cycle_id TEXT, title TEXT, text TEXT)"

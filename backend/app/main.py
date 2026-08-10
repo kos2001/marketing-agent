@@ -1,0 +1,71 @@
+from __future__ import annotations
+import os
+import uuid
+from fastapi import FastAPI, HTTPException, Depends
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
+
+from .config import Settings
+from .storage import Store
+from .llm import ChatClient, HttpChatClient
+from .schemas import SourceDoc, CycleReport
+from .orchestrator import run_pipeline
+
+app = FastAPI(title="marketing-agent")
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+_settings = Settings.from_env()
+os.makedirs(os.path.dirname(_settings.db_path) or ".", exist_ok=True)
+_store = Store(_settings.db_path)
+_client = HttpChatClient(_settings.llm_base_url, _settings.llm_api_key, _settings.llm_model)
+
+
+def get_store() -> Store:
+    return _store
+
+
+def get_client() -> ChatClient:
+    return _client
+
+
+class SourceIn(BaseModel):
+    cycle_id: str
+    title: str
+    text: str
+
+
+@app.get("/health")
+def health():
+    return {"status": "ok"}
+
+
+@app.post("/sources")
+def add_source(payload: SourceIn, store: Store = Depends(get_store)):
+    doc = SourceDoc(
+        id=f"s-{uuid.uuid4().hex[:8]}", cycle_id=payload.cycle_id, title=payload.title, text=payload.text
+    )
+    store.add_source(doc)
+    return {"id": doc.id}
+
+
+@app.post("/pipeline/run", response_model=CycleReport)
+async def run(cycle_id: str, store: Store = Depends(get_store), client: ChatClient = Depends(get_client)):
+    return await run_pipeline(client, store, cycle_id)
+
+
+@app.get("/reports/{cycle_id}", response_model=CycleReport)
+def get_report(cycle_id: str, store: Store = Depends(get_store)):
+    report = store.get_report(cycle_id)
+    if report is None:
+        raise HTTPException(status_code=404, detail="report not found")
+    return report
+
+
+@app.get("/cycles")
+def list_cycles(store: Store = Depends(get_store)):
+    return store.list_cycles()
