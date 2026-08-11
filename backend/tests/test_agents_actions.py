@@ -9,17 +9,26 @@ CP: list[CriticalPoint] = []
 
 
 @pytest.mark.asyncio
-async def test_run_action_items_parses_and_links_sources():
+async def test_run_action_items_orders_immediate_then_needed_then_summary():
     client = StubChatClient({
-        "actions": {"items": [
-            {"title": "이메일 제목 A/B 테스트 실시", "owner": "마케팅팀", "due": "2026-08-25",
-             "priority": "high", "source_item_ids": ["d1"]}
-        ]}
+        "actions": {
+            "immediate_check": [
+                {"title": "오픈율 급락 원인 긴급 점검", "owner": "마케팅팀", "due": "2026-08-12",
+                 "priority": "high", "source_item_ids": ["d1"]}
+            ],
+            "action_needed": [
+                {"title": "이메일 제목 A/B 테스트 실시", "owner": "마케팅팀", "due": "2026-08-25",
+                 "priority": "mid", "source_item_ids": ["d1"]}
+            ],
+            "final_summary": "오픈율 하락이 시급하며, 나머지는 순차 대응한다.",
+        }
     })
-    items = await run_action_items(client, DIAG, OPP, CP)
-    assert len(items) == 1
-    assert items[0].owner == "마케팅팀"
-    assert items[0].source_item_ids == ["d1"]
+    report = await run_action_items(client, DIAG, OPP, CP)
+    assert len(report.immediate_check) == 1
+    assert report.immediate_check[0].owner == "마케팅팀"
+    assert report.immediate_check[0].source_item_ids == ["d1"]
+    assert len(report.action_needed) == 1
+    assert report.final_summary == "오픈율 하락이 시급하며, 나머지는 순차 대응한다."
 
 
 @pytest.mark.asyncio

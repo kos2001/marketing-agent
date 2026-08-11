@@ -12,11 +12,35 @@ def make_store():
     return Store(path)
 
 
+BASE_SUMMARY = {
+    "executive_summary": "요약.",
+    "customer_strategies": [],
+    "corporate_response_process": [],
+}
+BASE_STRATEGY = {
+    "issue_guides": [],
+    "strategic_axes": [
+        {"title": "A", "description": "d", "citations": []},
+        {"title": "B", "description": "d", "citations": []},
+        {"title": "C", "description": "d", "citations": []},
+    ],
+    "recommended_timeline": [],
+}
+BASE_ACTIONS = {
+    "immediate_check": [{"title": "A/B 테스트", "owner": "마케팅팀", "due": "2026-08-25",
+                          "priority": "high", "source_item_ids": []}],
+    "action_needed": [],
+    "final_summary": "요약.",
+}
+
+
 def test_catalog_declares_needs_matching_spec():
     by_id = {a["id"]: a for a in AGENT_CATALOG}
     assert by_id["D1"]["needs"] == ()
     assert by_id["V"]["needs"] == ()
     assert set(by_id["T1"]["needs"]) == {"D1", "V", "D2", "D3"}
+    assert set(by_id["SUMMARY"]["needs"]) == {"D1", "D2", "D3"}
+    assert set(by_id["STRATEGY"]["needs"]) == {"D1", "D2", "D3", "T1"}
     assert set(by_id["V3"]["needs"]) == {"D1", "D2", "D3", "V", "V2", "T1"}
 
 
@@ -33,8 +57,9 @@ async def test_run_pipeline_produces_full_report():
         "v": {"items": [{"channel": "이메일", "kind": "weakness", "summary": "재도출"}]},
         "v2": {"items": []},
         "t1-match": {"matches": []},
-        "actions": {"items": [{"title": "A/B 테스트", "owner": "마케팅팀", "due": "2026-08-25",
-                                "priority": "high", "source_item_ids": []}]},
+        "summary": BASE_SUMMARY,
+        "strategy": BASE_STRATEGY,
+        "actions": BASE_ACTIONS,
         "overview": "총평입니다.",
         "v3-check": {"unsupported_sentences": []},
     }
@@ -44,7 +69,9 @@ async def test_run_pipeline_produces_full_report():
     assert report.cycle_id == "c1"
     assert len(report.diagnosis) == 1
     assert report.diagnosis[0].status == "confirmed"
-    assert len(report.action_items) == 1
+    assert len(report.action_items.immediate_check) == 1
+    assert len(report.strategy_timeline.strategic_axes) == 3
+    assert report.diagnosis_summary.executive_summary == "요약."
     assert store.get_report("c1") is not None
 
 
@@ -57,7 +84,9 @@ async def test_run_pipeline_computes_repeat_count():
     base_responses = {
         "d1": {"items": [{"channel": "이메일", "summary": "오픈율 하락", "kind": "weakness", "citations": []}]},
         "d2": {"items": []}, "d3": {"items": []}, "v": {"items": []}, "v2": {"items": []},
-        "actions": {"items": []}, "overview": "총평.", "v3-check": {"unsupported_sentences": []},
+        "summary": BASE_SUMMARY, "strategy": BASE_STRATEGY,
+        "actions": {"immediate_check": [], "action_needed": [], "final_summary": ""},
+        "overview": "총평.", "v3-check": {"unsupported_sentences": []},
     }
     client0 = StubChatClient({**base_responses, "t1-match": {"matches": []}})
     await run_pipeline(client0, store, "c0")

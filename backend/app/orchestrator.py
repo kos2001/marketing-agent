@@ -5,6 +5,8 @@ from .storage import Store
 from .schemas import CycleReport, TimelineLink
 from .agents_diagnosis import run_d1, run_d2, run_d3, run_v, run_v2
 from .agents_timeline import run_t1
+from .agents_summary import run_summary
+from .agents_strategy import run_strategy
 from .agents_actions import run_action_items, run_overview
 
 AGENT_CATALOG: tuple[dict[str, object], ...] = (
@@ -14,6 +16,8 @@ AGENT_CATALOG: tuple[dict[str, object], ...] = (
     {"id": "V", "phase": "diagnose", "needs": ()},
     {"id": "V2", "phase": "diagnose", "needs": ()},
     {"id": "T1", "phase": "timeline", "needs": ("D1", "V", "D2", "D3")},
+    {"id": "SUMMARY", "phase": "compose", "needs": ("D1", "D2", "D3")},
+    {"id": "STRATEGY", "phase": "compose", "needs": ("D1", "D2", "D3", "T1")},
     {"id": "ACTIONS", "phase": "compose", "needs": ("D1", "D2", "D3", "T1")},
     {"id": "V3", "phase": "compose", "needs": ("D1", "D2", "D3", "V", "V2", "T1")},
 )
@@ -65,8 +69,10 @@ async def run_pipeline(client: ChatClient, store: Store, cycle_id: str) -> Cycle
         for t in raw_timeline
     ]
 
-    # phase: compose — ACTIONS and V3 both need T1 + D1,D2,D3
-    action_items, (overview_text, warnings) = await asyncio.gather(
+    # phase: compose — SUMMARY needs D1,D2,D3; STRATEGY/ACTIONS/V3 also need T1
+    diagnosis_summary, strategy_timeline, action_items, (overview_text, warnings) = await asyncio.gather(
+        run_summary(client, sources, verified_d1, opp_risks, d3_items),
+        run_strategy(client, sources, verified_d1, opp_risks, d3_items, timeline),
         run_action_items(client, verified_d1, opp_risks, d3_items),
         run_overview(client, verified_d1, opp_risks, d3_items, timeline, source_map),
     )
@@ -79,7 +85,9 @@ async def run_pipeline(client: ChatClient, store: Store, cycle_id: str) -> Cycle
         diagnosis=verified_d1,
         opportunities_risks=opp_risks,
         critical_points=d3_items,
+        diagnosis_summary=diagnosis_summary,
         timeline=timeline,
+        strategy_timeline=strategy_timeline,
         action_items=action_items,
         overview=overview_text,
         overview_warnings=warnings,

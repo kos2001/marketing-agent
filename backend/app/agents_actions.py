@@ -1,13 +1,19 @@
 from __future__ import annotations
 import uuid
 from .llm import ChatClient, extract_json
-from .schemas import DiagnosisItem, OpportunityRiskItem, CriticalPoint, TimelineLink, ActionItem
+from .schemas import DiagnosisItem, OpportunityRiskItem, CriticalPoint, TimelineLink, ActionItem, ActionItemsReport
 
 ACTIONS_SYSTEM = (
     "당신은 실행 전환관입니다. 현황진단·기회·리스크·Critical Point를 바탕으로 실행 "
-    '가능한 Action Item을 담당·기한·우선순위와 함께 만드십시오. JSON: {"items": '
-    '[{"title": str, "owner": str, "due": "YYYY-MM-DD", "priority": "high"|"mid"|"low", '
-    '"source_item_ids": [str]}]}. source_item_ids는 입력으로 준 항목의 id를 그대로 쓰십시오.'
+    "가능한 Action Item을 만드십시오. 다음 순서로 세 부분을 구성합니다:\n"
+    "1) immediate_check: 지금 즉시 확인·검토해야 하는 긴급 항목.\n"
+    "2) action_needed: 조치가 필요하지만 즉각적인 긴급성은 없는 항목.\n"
+    "3) final_summary: 전체 Action Item을 한 문단으로 요약하는 최종 요약.\n\n"
+    "각 Action Item은 title, owner(담당), due(YYYY-MM-DD), priority(\"high\"|\"mid\"|"
+    '"low"), source_item_ids(입력 항목의 id)를 갖습니다.\n\n'
+    'JSON 형식: {"immediate_check": [{"title": str, "owner": str, "due": str, '
+    '"priority": str, "source_item_ids": [str]}], "action_needed": [{...같은 형식...}], '
+    '"final_summary": str}.'
 )
 
 OVERVIEW_SYSTEM = (
@@ -30,15 +36,7 @@ def _input_summary(diag, opp, cp) -> str:
     return "\n".join(lines)
 
 
-async def run_action_items(
-    client: ChatClient,
-    diagnosis: list[DiagnosisItem],
-    opp_risks: list[OpportunityRiskItem],
-    critical_points: list[CriticalPoint],
-) -> list[ActionItem]:
-    user = _input_summary(diagnosis, opp_risks, critical_points)
-    raw = await client.chat(ACTIONS_SYSTEM, user, session_id="actions")
-    data = extract_json(raw)
+def _parse_action_items(items: list[dict]) -> list[ActionItem]:
     return [
         ActionItem(
             id=f"ai-{uuid.uuid4().hex[:8]}",
@@ -48,8 +46,24 @@ async def run_action_items(
             priority=it["priority"],
             source_item_ids=it.get("source_item_ids", []),
         )
-        for it in data.get("items", [])
+        for it in items
     ]
+
+
+async def run_action_items(
+    client: ChatClient,
+    diagnosis: list[DiagnosisItem],
+    opp_risks: list[OpportunityRiskItem],
+    critical_points: list[CriticalPoint],
+) -> ActionItemsReport:
+    user = _input_summary(diagnosis, opp_risks, critical_points)
+    raw = await client.chat(ACTIONS_SYSTEM, user, session_id="actions")
+    data = extract_json(raw)
+    return ActionItemsReport(
+        immediate_check=_parse_action_items(data.get("immediate_check", [])),
+        action_needed=_parse_action_items(data.get("action_needed", [])),
+        final_summary=data.get("final_summary", ""),
+    )
 
 
 async def run_overview(

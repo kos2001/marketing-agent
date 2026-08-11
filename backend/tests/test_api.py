@@ -13,7 +13,17 @@ RESPONSES = {
     "v": {"items": []},
     "v2": {"items": []},
     "t1-match": {"matches": []},
-    "actions": {"items": []},
+    "summary": {"executive_summary": "요약.", "customer_strategies": [], "corporate_response_process": []},
+    "strategy": {
+        "issue_guides": [],
+        "strategic_axes": [
+            {"title": "A", "description": "d", "citations": []},
+            {"title": "B", "description": "d", "citations": []},
+            {"title": "C", "description": "d", "citations": []},
+        ],
+        "recommended_timeline": [],
+    },
+    "actions": {"immediate_check": [], "action_needed": [], "final_summary": ""},
     "overview": "총평.",
     "v3-check": {"unsupported_sentences": []},
 }
