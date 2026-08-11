@@ -1,39 +1,31 @@
 "use client";
 import { useState } from "react";
-import { runPipeline, getReport, type CycleReport } from "@/lib/api";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { runPipeline, getReport } from "@/lib/api";
 import { UploadForm } from "@/components/UploadForm";
 import { ReportView } from "@/components/ReportView";
 import { Button, ErrorNote, PageHeader } from "@/components/ui";
 
 export default function Home() {
   const [cycleId, setCycleId] = useState("2026-W32");
-  const [report, setReport] = useState<CycleReport | null>(null);
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState("");
+  const queryClient = useQueryClient();
 
-  async function handleRun() {
-    setBusy(true);
-    setError("");
-    try {
-      const result = await runPipeline(cycleId);
-      setReport(result);
-    } catch (e) {
-      setError(String(e));
-    } finally {
-      setBusy(false);
-    }
-  }
+  const reportQuery = useQuery({
+    queryKey: ["report", cycleId],
+    queryFn: () => getReport(cycleId),
+    enabled: false,
+  });
 
-  async function handleLoadExisting() {
-    setError("");
-    try {
-      const result = await getReport(cycleId);
-      setReport(result);
-      if (!result) setError("이 회차의 리포트가 아직 없습니다.");
-    } catch (e) {
-      setError(String(e));
-    }
-  }
+  const runMutation = useMutation({
+    mutationFn: () => runPipeline(cycleId),
+    onSuccess: (data) => {
+      queryClient.setQueryData(["report", cycleId], data);
+    },
+  });
+
+  const report = runMutation.data ?? reportQuery.data;
+  const error = runMutation.error ?? reportQuery.error;
+  const notFound = reportQuery.isFetched && reportQuery.data === null && !runMutation.data;
 
   return (
     <>
@@ -51,11 +43,11 @@ export default function Home() {
             className="rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-1.5 text-sm text-zinc-100 outline-none focus:border-sky-500"
           />
         </label>
-        <Button variant="secondary" size="sm" onClick={handleLoadExisting}>
-          불러오기
+        <Button variant="secondary" size="sm" onClick={() => reportQuery.refetch()} disabled={reportQuery.isFetching}>
+          {reportQuery.isFetching ? "불러오는 중..." : "불러오기"}
         </Button>
-        <Button size="sm" onClick={handleRun} disabled={busy}>
-          {busy ? "실행 중..." : "파이프라인 실행"}
+        <Button size="sm" onClick={() => runMutation.mutate()} disabled={runMutation.isPending}>
+          {runMutation.isPending ? "실행 중..." : "파이프라인 실행"}
         </Button>
       </div>
 
@@ -65,7 +57,12 @@ export default function Home() {
 
       {error && (
         <div className="mb-6">
-          <ErrorNote message={error} />
+          <ErrorNote message={String(error)} />
+        </div>
+      )}
+      {notFound && (
+        <div className="mb-6">
+          <ErrorNote message="이 회차의 리포트가 아직 없습니다." />
         </div>
       )}
       {report && <ReportView report={report} />}

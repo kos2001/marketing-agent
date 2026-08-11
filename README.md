@@ -114,6 +114,25 @@ data-provenance-auditor), `panaversity/agentfactory-business-plugins`
 구현했고, 나머지는 LLM 판단에 맡기는 현재 방식이 검증에서 잘 작동해 우선순위가
 낮다).
 
+### 프론트엔드 기술 스택
+
+Next.js 15(App Router) + React 19 + Tailwind v4 위에 다음을 얹었다:
+
+- **TanStack Query v5** — `app/page.tsx`가 리포트 조회/실행을 `useQuery`/
+  `useMutation`으로 다룬다. 캐시 키는 `["report", cycleId]` — 회차를 바꾸면
+  자동으로 새 쿼리가 된다.
+- **Zod** — `lib/schemas.ts`가 `backend/app/schemas.py`와 1:1 대응하는 스키마를
+  정의하고, `lib/api.ts`가 모든 응답을 `.parse()`로 검증한다. 백엔드 모양이
+  바뀌었는데 프론트가 조용히 깨지는 것(런타임에야 드러나는 `undefined` 접근)을
+  막는다 — 실제로 이 세션에서만 `CycleReport` 모양이 세 번 바뀌었다. 실 백엔드
+  응답으로 스키마 정합성을 검증했다(`ZOD VALIDATION: PASS`).
+- **next/font (Geist Sans/Mono)** — `weekly-report-harness`와 동일한 폰트
+  최적화. Geist는 라틴 문자만 지원하므로 한글은 자동으로 폴백 스택
+  (Apple SD Gothic Neo 등)으로 넘어간다 — harness와 동일한 동작이다.
+
+타입은 `lib/schemas.ts`의 zod 스키마에서 `z.infer`로 도출한다 — 수동으로 쓴
+TS interface와 실제 검증 로직이 따로 노는 문제가 없다.
+
 ## 정확도 규율
 
 - 모든 진단/기회/리스크/Critical Point 항목은 서술과 별개로 축자 인용을 내고,
@@ -149,9 +168,11 @@ backend/app/
   orchestrator.py                # AGENT_CATALOG + run_pipeline
   main.py                         # FastAPI 라우트
 frontend/
-  lib/api.ts             # 타입 + API 클라이언트
-  components/             # UploadForm, ReportView
-  app/page.tsx              # 대시보드
+  lib/schemas.ts          # zod 스키마 (백엔드 schemas.py와 1:1 대응) + 타입
+  lib/api.ts               # API 클라이언트 (zod로 응답 검증)
+  lib/query-provider.tsx     # TanStack QueryClientProvider
+  components/                 # UploadForm, ReportView, ui.tsx
+  app/page.tsx                  # 대시보드 (useQuery/useMutation)
 ```
 
 ## 2차 확장 후보 (이번 범위 아님)
