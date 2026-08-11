@@ -149,6 +149,31 @@ export function MetricStatusBadge({ status }: { status: string }) {
   );
 }
 
+const riskLevelStyle: Record<string, string> = {
+  stable: "bg-emerald-950/60 text-emerald-400 border-emerald-900/60",
+  at_risk: "bg-amber-950/60 text-amber-400 border-amber-900/60",
+  critical: "bg-red-950/60 text-red-400 border-red-900/60",
+};
+
+const riskLevelLabel: Record<string, string> = {
+  stable: "안정",
+  at_risk: "주의",
+  critical: "위험",
+};
+
+/** 고객(법인) 계정 건강도 — GTM Claude Skills(gtm-engineer-playbook)의
+ * 리드 온도 티어링(HOT/WARM/COLD)을 신규 리드가 아닌 기존 계정 건강도로
+ * 바꿔 적용한 것. */
+export function RiskLevelBadge({ level }: { level: string }) {
+  return (
+    <span
+      className={`inline-flex items-center whitespace-nowrap rounded-full border px-2.5 py-0.5 text-[11px] font-medium ${riskLevelStyle[level] ?? riskLevelStyle.at_risk}`}
+    >
+      {riskLevelLabel[level] ?? level}
+    </span>
+  );
+}
+
 export function Tag({ children }: { children: ReactNode }) {
   return (
     <span className="inline-flex items-center rounded-md bg-zinc-800 px-2 py-0.5 text-[11px] text-zinc-400">

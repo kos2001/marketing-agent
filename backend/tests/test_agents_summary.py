@@ -16,6 +16,7 @@ async def test_run_summary_parses_executive_summary_and_grounds_customer_citatio
             "executive_summary": "오픈율이 하락했다.",
             "customer_strategies": [
                 {"customer": "ACME", "situation": "오픈율 하락에 항의", "strategy": "전담 대응",
+                 "risk_level": "critical",
                  "citations": [{"quote": "ACME 법인 담당자가 오픈율 하락에 항의했다", "source_id": "s1"},
                                 {"quote": "지어낸 문장", "source_id": "s1"}]}
             ],
@@ -28,9 +29,25 @@ async def test_run_summary_parses_executive_summary_and_grounds_customer_citatio
     summary = await run_summary(client, SOURCES, DIAG, OPP, CP)
     assert summary.executive_summary == "오픈율이 하락했다."
     assert len(summary.customer_strategies) == 1
+    assert summary.customer_strategies[0].risk_level == "critical"
     assert len(summary.customer_strategies[0].citations) == 1  # 지어낸 인용 제거됨
     assert [p.order for p in summary.corporate_response_process] == [1, 2]
     assert summary.corporate_response_process[0].owner == "CS팀"
+
+
+@pytest.mark.asyncio
+async def test_run_summary_customer_strategy_defaults_risk_level_when_missing():
+    client = StubChatClient({
+        "summary": {
+            "executive_summary": "요약.",
+            "customer_strategies": [
+                {"customer": "Beta Corp", "situation": "재계약 검토 중", "strategy": "재계약 대응"}
+            ],
+            "corporate_response_process": [],
+        }
+    })
+    summary = await run_summary(client, SOURCES, DIAG, OPP, CP)
+    assert summary.customer_strategies[0].risk_level == "at_risk"
 
 
 @pytest.mark.asyncio

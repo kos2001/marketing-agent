@@ -4,6 +4,7 @@ import {
   LevelBadge,
   MetricStatusBadge,
   PriorityBadge,
+  RiskLevelBadge,
   SectionTitle,
   StatusBadge,
   Tag,
@@ -146,7 +147,10 @@ export function ReportView({ report }: { report: CycleReport }) {
               )}
               {summary.customer_strategies.map((c) => (
                 <li key={c.id} className="border-b border-zinc-800 pb-3 last:border-0 last:pb-0">
-                  <p className="text-sm font-medium text-zinc-100">{c.customer}</p>
+                  <div className="flex items-center gap-2">
+                    <p className="text-sm font-medium text-zinc-100">{c.customer}</p>
+                    <RiskLevelBadge level={c.risk_level} />
+                  </div>
                   <p className="mt-1 text-xs text-zinc-400">현황: {c.situation}</p>
                   <p className="mt-1 text-xs text-zinc-400">대응: {c.strategy}</p>
                 </li>

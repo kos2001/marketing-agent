@@ -26,18 +26,21 @@ SUMMARY_SYSTEM = (
     "벤치마크를 만들어 넣지 마십시오** — 원문에 정량 지표가 전혀 없으면 빈 배열로 "
     "두십시오.\n"
     "3) customer_strategies: 원문에서 특정 고객사·거래처·세그먼트가 식별되면 그 "
-    "고객별로 situation(현황)과 strategy(대응 방향)를 적으십시오. 원문에 특정 고객이 "
-    "전혀 없으면 빈 배열로 두십시오 — 없는 고객을 지어내지 마십시오.\n"
+    "고객별로 situation(현황), strategy(대응 방향), risk_level(\"stable\"|\"at_risk\"|"
+    "\"critical\" — 이 계정과의 관계가 얼마나 위태로운가. 불만·이탈 신호·재계약 "
+    "미확정 등이 있으면 \"critical\", 경미한 우려가 있으면 \"at_risk\", 특별한 "
+    "문제가 없으면 \"stable\")를 적으십시오. 원문에 특정 고객이 전혀 없으면 빈 "
+    "배열로 두십시오 — 없는 고객을 지어내지 마십시오.\n"
     "4) corporate_response_process: 법인(기업) 고객 대응을 위한 순서 있는 절차. 각 "
     "단계는 order(1부터), title, description, owner(담당 부서/역할, 모르면 빈 문자열)를 "
     "적으십시오. 이 절차는 진단에서 나온 문제를 해결하기 위한 제안이므로 원문 인용을 "
     "요구하지 않습니다.\n\n"
     'JSON 형식: {"executive_summary": str, "metrics": [{"metric": str, "current": str, '
     '"prior": str, "change": str, "target": str, "status": str}], "customer_strategies": '
-    '[{"customer": str, "situation": str, "strategy": str, "citations": [{"quote": str, '
-    '"source_id": str}]}], "corporate_response_process": [{"order": int, "title": str, '
-    '"description": str, "owner": str}]}. citations의 quote는 원문에서 그대로 축자 '
-    "인용해야 합니다."
+    '[{"customer": str, "situation": str, "strategy": str, "risk_level": str, "citations": '
+    '[{"quote": str, "source_id": str}]}], "corporate_response_process": [{"order": int, '
+    '"title": str, "description": str, "owner": str}]}. citations의 quote는 원문에서 '
+    "그대로 축자 인용해야 합니다."
 )
 
 
@@ -91,6 +94,7 @@ async def run_summary(
             customer=it["customer"],
             situation=it["situation"],
             strategy=it["strategy"],
+            risk_level=it.get("risk_level", "at_risk"),
             citations=ground_citations(citations, smap),
         ))
 

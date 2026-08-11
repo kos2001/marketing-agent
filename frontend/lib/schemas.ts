@@ -70,6 +70,7 @@ export const CustomerStrategySchema = z.object({
   customer: z.string(),
   situation: z.string(),
   strategy: z.string(),
+  risk_level: z.enum(["stable", "at_risk", "critical"]),
   citations: z.array(CitationSchema),
 });
 

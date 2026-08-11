@@ -114,6 +114,25 @@ data-provenance-auditor), `panaversity/agentfactory-business-plugins`
 구현했고, 나머지는 LLM 판단에 맡기는 현재 방식이 검증에서 잘 작동해 우선순위가
 낮다).
 
+### github.com/topics/sales 조사 반영 (2026-08-11)
+
+토픽 상위 결과 대부분은 PHP/Java 등 다른 스택의 CRM·ERP·POS 전체 플랫폼이라
+코드 이식은 맞지 않았다. 그 중 B2B 영업 전용 Claude Skills 저장소 두 개
+(`keinsaasforever/gtm-pipeline-skills`, `Othmane-Khadri/gtm-engineer-playbook`)
+에서 개념 하나를 가져왔다:
+
+- **계정 리스크 티어** (`CustomerStrategy.risk_level`: stable/at_risk/critical)
+  — gtm-engineer-playbook의 Qualification Scorer가 쓰는 리드 온도 티어링
+  (HOT/WARM/COLD/PARK)을, 신규 리드 발굴이 아니라 **이미 확보한 법인 계정의
+  건강도**를 빠르게 훑는 용도로 바꿔 적용했다. 실측: 불만을 제기하며 계약
+  재검토를 언급한 고객은 `critical`, 특별한 이슈 없이 정상 이용 중이라고 밝힌
+  고객은 `stable`로 정확히 갈렸다.
+
+두 저장소가 중심으로 다루는 리드 발굴·enrichment·ICP 스코어링(company-search,
+signal-search, people-search 등)은 이 프로젝트의 범위(기존 성과 진단)와
+맞지 않아 가져오지 않았다 — 이 하네스는 잠재 고객을 찾는 도구가 아니라
+이미 확보한 채널·고객의 현황을 진단하는 도구다.
+
 ### 프론트엔드 기술 스택
 
 Next.js 15(App Router) + React 19 + Tailwind v4 위에 다음을 얹었다:

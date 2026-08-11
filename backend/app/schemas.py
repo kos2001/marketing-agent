@@ -75,12 +75,18 @@ class ActionItemsReport(BaseModel):
 
 
 class CustomerStrategy(BaseModel):
-    """고객(법인)별 대응 전략 — 특정 고객/세그먼트에 대한 현황과 대응 방향."""
+    """고객(법인)별 대응 전략 — 특정 고객/세그먼트에 대한 현황과 대응 방향.
+
+    risk_level은 github.com/topics/sales에서 확인한 GTM Claude Skills
+    저장소(gtm-engineer-playbook의 Qualification Scorer)가 쓰는 리드 온도
+    티어링(HOT/WARM/COLD/PARK) 개념을, 신규 리드가 아니라 이미 확보한 법인
+    계정의 건강도를 빠르게 훑는 용도로 바꿔 적용한 것이다."""
 
     id: str
     customer: str
     situation: str
     strategy: str
+    risk_level: Literal["stable", "at_risk", "critical"] = "at_risk"
     citations: list[Citation] = Field(default_factory=list)
 
 
