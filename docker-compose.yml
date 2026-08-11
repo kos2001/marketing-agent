@@ -1,0 +1,55 @@
+# marketing-agent — 단일 호스트 실행용.
+#
+# 서비스는 둘이다. DB는 SQLite 파일이라 별도 컨테이너가 없다(볼륨 하나로
+# 충분하다). weekly-report-harness와 달리 LLM은 hermes-gateway가 아니라
+# 호스트에서 도는 hermes-agent api_server(marketing-agent 프로파일, :8654)에
+# 직접 붙는다 — backend/README의 "LLM 연동" 절 참고.
+#
+#   docker compose up --build
+#   → 화면      http://localhost:3011
+#     REST API  http://localhost:8012/docs
+#
+# 시작 전에 준비할 것:
+#   1. backend/.env  (scripts/setup_hermes_profile.sh --apply 후 채운다)
+#      cp backend/.env.example backend/.env
+#   2. 호스트에서 hermes api_server가 돌고 있어야 한다:
+#      hermes -p marketing-agent gateway restart
+
+services:
+  backend:
+    build: ./backend
+    image: marketing-agent-backend:latest
+    ports:
+      - "8012:8012"
+    env_file:
+      # 파일이 없으면 compose가 멈춘다 — 조용히 기본값으로 뜨는 것보다 낫다.
+      - ./backend/.env
+    environment:
+      MA_DB_PATH: /app/data/marketing_agent.db
+      # 컨테이너 안의 127.0.0.1은 컨테이너 자신이다 — 호스트의 hermes
+      # api_server에 닿으려면 host.docker.internal을 써야 한다. .env의 값을
+      # 여기서 덮어쓴다.
+      MA_LLM_BASE_URL: http://host.docker.internal:8654/v1
+    volumes:
+      - ma-data:/app/data
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        # 빌드 시점 인자여야 한다 — 브라우저가 부르는 주소이므로 서비스 이름
+        # (backend)이 아니라 호스트에서 보이는 주소를 쓴다.
+        NEXT_PUBLIC_API_BASE: http://localhost:8012
+    image: marketing-agent-frontend:latest
+    ports:
+      - "3011:3011"
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  ma-data:   # SQLite 파일

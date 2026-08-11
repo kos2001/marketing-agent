@@ -8,6 +8,28 @@
 
 ## 빠른 시작
 
+### Docker (권장)
+
+```sh
+cp backend/.env.example backend/.env   # scripts/setup_hermes_profile.sh --apply 로 채운다
+hermes -p marketing-agent gateway restart   # 호스트에서 LLM api_server 기동 (:8654)
+docker compose up -d --build
+```
+
+화면: http://localhost:3011 · API: http://localhost:8012/docs
+
+백엔드 컨테이너는 `host.docker.internal`로 호스트의 hermes api_server에
+접속한다(`docker-compose.yml`이 `MA_LLM_BASE_URL`을 덮어쓴다) — 컨테이너 안의
+`127.0.0.1`은 컨테이너 자신이라 `.env`의 값 그대로는 닿지 않는다.
+
+`NEXT_PUBLIC_API_BASE`를 바꿨으면(포트 등) `docker compose up -d --build`로
+**다시 빌드**해야 한다 — Next.js가 이 값을 빌드 시점에 클라이언트 번들에
+문자열로 박아 넣으므로, 이미지 태그가 같으면 캐시된 이전 빌드가 그대로
+재사용되어 조용히 낡은 값을 서빙한다(실제로 이 문제로 한 번 8013이 박힌 채
+돌았던 것을 잡아냈다 — 매번 `--build`를 붙이는 습관이 안전하다).
+
+### 로컬 (Docker 없이)
+
 ```sh
 scripts/setup.sh
 cd backend && .venv/bin/uvicorn app.main:app --reload --port 8012 &
@@ -192,6 +214,9 @@ frontend/
   lib/query-provider.tsx     # TanStack QueryClientProvider
   components/                 # UploadForm, ReportView, ui.tsx
   app/page.tsx                  # 대시보드 (useQuery/useMutation)
+docker-compose.yml    # backend + frontend 2개 서비스, SQLite는 볼륨 하나
+backend/Dockerfile    # 멀티스테이지: 의존성 레이어 → 런타임 (tini + 비루트)
+frontend/Dockerfile   # 멀티스테이지: standalone 빌드 → 최소 런타임
 ```
 
 ## 2차 확장 후보 (이번 범위 아님)
