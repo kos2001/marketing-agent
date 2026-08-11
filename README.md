@@ -50,14 +50,17 @@ MA_LLM_API_KEY=<setup_hermes_profile.sh 가 생성한 API_SERVER_KEY>
 MA_LLM_MODEL=marketing-agent
 ```
 
-실측(2026-08-11): 이메일/인스타그램 성과 텍스트 1건으로 `/pipeline/run`을
-실행해 D1~D3·V·V2·Action Items·총평이 축자 인용과 함께 정상 생성됨을 확인했다.
+실측(2026-08-11): 이메일/인스타그램/법인 고객(ACME, Beta Corp) 성과 텍스트로
+`/pipeline/run`을 실행해 아래 10개 에이전트 전체가 축자 인용과 함께 정상
+생성됨을 확인했다 — 지어낸 고객명 없이 원문에 있는 두 법인만 식별했고,
+전략의 3축은 정확히 3개, Action Items는 즉시 확인 4건 → 조치 필요 3건 →
+최종 요약 순으로 나왔다.
 
 ## 아키텍처
 
 원문 업로드 → 정규화 → 병렬 진단(D1 현황진단 ∥ D2 기회·리스크 ∥ D3 Critical
-Point ∥ V·V2 독립 교차검증) → 타임라인 연속성(T1, 반박 검증) → Action Items +
-총평(V3 사실검증) → 리포트.
+Point ∥ V·V2 독립 교차검증) → 타임라인 연속성(T1, 반박 검증) → 종합(SUMMARY·
+STRATEGY·ACTIONS·V3 총평 병렬) → 리포트.
 
 에이전트 그래프는 `backend/app/orchestrator.py`의 `AGENT_CATALOG`에 `needs`로
 선언되어 있고, 실행이 그 선언을 지키는지 `backend/tests/test_orchestrator.py`가
@@ -71,8 +74,18 @@ Point ∥ V·V2 독립 교차검증) → 타임라인 연속성(T1, 반박 검�
 | V 진단 교차검증관 | D1 독립 재탐지 | () |
 | V2 기회·리스크 교차검증관 | D2 누락 점검 | () |
 | T1 타임라인 정합관 | 회차를 넘는 연속성(+반박 검증) | D1, V, D2, D3 |
-| Action Items 생성관 | 담당·기한·우선순위 부여 | D1, D2, D3, T1 |
+| SUMMARY 현황진단 종합관 | Executive Summary·고객별 대응 전략·법인 대응 process | D1, D2, D3 |
+| STRATEGY 전략/타임라인 수립관 | 사안별 전략 가이드·전략의 3축·권장 타임라인 | D1, D2, D3, T1 |
+| ACTIONS 실행 전환관 | 즉시 확인 → 조치 필요 → 최종 요약 | D1, D2, D3, T1 |
 | V3 총평 사실검증관 | 총평 문장별 근거 대조 | D1, D2, D3, V, V2, T1 |
+
+### 리포트 구성
+
+- **현황진단**: Executive Summary, 채널별 진단, 고객(법인)별 대응 전략, 법인
+  대응 process
+- **전략/타임라인**: 사안별 전략 가이드, 전략의 3축(정확히 3개), 권장
+  타임라인(이미 반복 중인 사안일수록 이른 시점에 배치), 회차 간 연속성
+- **Action Items**: 즉시 확인 → 조치 필요 → 최종 요약
 
 ## 정확도 규율
 
@@ -103,9 +116,11 @@ backend/app/
   storage.py              # SQLite 저장소
   agents_diagnosis.py      # D1/D2/D3, V, V2
   agents_timeline.py        # T1 (반박 검증 포함)
-  agents_actions.py          # Action Items, V3
-  orchestrator.py              # AGENT_CATALOG + run_pipeline
-  main.py                       # FastAPI 라우트
+  agents_summary.py          # SUMMARY (현황진단 종합: Executive Summary 등)
+  agents_strategy.py          # STRATEGY (전략/타임라인: 전략의 3축 등)
+  agents_actions.py            # ACTIONS (Action Items), V3 (총평 사실검증)
+  orchestrator.py                # AGENT_CATALOG + run_pipeline
+  main.py                         # FastAPI 라우트
 frontend/
   lib/api.ts             # 타입 + API 클라이언트
   components/             # UploadForm, ReportView

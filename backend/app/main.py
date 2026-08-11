@@ -22,7 +22,9 @@ app.add_middleware(
 _settings = Settings.from_env()
 os.makedirs(os.path.dirname(_settings.db_path) or ".", exist_ok=True)
 _store = Store(_settings.db_path)
-_client = HttpChatClient(_settings.llm_base_url, _settings.llm_api_key, _settings.llm_model)
+_client = HttpChatClient(
+    _settings.llm_base_url, _settings.llm_api_key, _settings.llm_model, timeout_s=_settings.llm_timeout_s
+)
 
 
 def get_store() -> Store:

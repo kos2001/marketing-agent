@@ -49,13 +49,70 @@ export interface ActionItem {
   source_item_ids: string[];
 }
 
+export interface ActionItemsReport {
+  immediate_check: ActionItem[];
+  action_needed: ActionItem[];
+  final_summary: string;
+}
+
+export interface CustomerStrategy {
+  id: string;
+  customer: string;
+  situation: string;
+  strategy: string;
+  citations: Citation[];
+}
+
+export interface ProcessStep {
+  order: number;
+  title: string;
+  description: string;
+  owner: string;
+}
+
+export interface DiagnosisSummary {
+  executive_summary: string;
+  customer_strategies: CustomerStrategy[];
+  corporate_response_process: ProcessStep[];
+}
+
+export interface StrategicAxis {
+  id: string;
+  title: string;
+  description: string;
+  citations: Citation[];
+}
+
+export interface IssueStrategyGuide {
+  id: string;
+  issue_title: string;
+  guide: string;
+  source_item_ids: string[];
+  citations: Citation[];
+}
+
+export interface RecommendedTimelineStep {
+  order: number;
+  when: string;
+  action: string;
+  owner: string;
+}
+
+export interface StrategyTimeline {
+  issue_guides: IssueStrategyGuide[];
+  strategic_axes: StrategicAxis[];
+  recommended_timeline: RecommendedTimelineStep[];
+}
+
 export interface CycleReport {
   cycle_id: string;
   diagnosis: DiagnosisItem[];
   opportunities_risks: OpportunityRiskItem[];
   critical_points: CriticalPoint[];
+  diagnosis_summary: DiagnosisSummary;
   timeline: TimelineLink[];
-  action_items: ActionItem[];
+  strategy_timeline: StrategyTimeline;
+  action_items: ActionItemsReport;
   overview: string;
   overview_warnings: string[];
   coverage_note: string;
