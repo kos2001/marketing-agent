@@ -10,6 +10,7 @@ from .storage import Store
 from .llm import ChatClient, HttpChatClient
 from .schemas import SourceDoc, CycleReport
 from .orchestrator import run_pipeline
+from .demo_fixture import seed_demo_data
 
 app = FastAPI(title="marketing-agent")
 app.add_middleware(
@@ -25,6 +26,8 @@ _store = Store(_settings.db_path)
 _client = HttpChatClient(
     _settings.llm_base_url, _settings.llm_api_key, _settings.llm_model, timeout_s=_settings.llm_timeout_s
 )
+if _settings.seed_demo_data:
+    seed_demo_data(_store)
 
 
 def get_store() -> Store:

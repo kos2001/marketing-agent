@@ -78,6 +78,21 @@ MA_LLM_MODEL=marketing-agent
 전략의 3축은 정확히 3개, Action Items는 즉시 확인 4건 → 조치 필요 3건 →
 최종 요약 순으로 나왔다.
 
+### 데모 데이터
+
+저장소가 비어 있으면(회차가 하나도 없으면) 백엔드가 시작할 때
+`backend/app/demo_fixture.py`의 정적 데모 리포트(`demo-2026-W30`)를 LLM
+호출 없이 채워 넣는다 — 클론하자마자 빈 화면이 아니라 실제 리포트 구조를
+바로 볼 수 있다. 프런트엔드도 이 회차를 기본값으로 두고 마운트 시 한 번
+자동으로 불러온다. 값은 이 프로젝트를 실 hermes api_server로 검증했을 때
+나온 산출물의 패턴을 그대로 따른다(현황진단·지표 대시보드·고객별 대응
+전략·전략의 3축·Action Items 전 구간).
+
+실 리포트가 하나라도 저장되면(`/pipeline/run`을 한 번이라도 완주하면) 다음
+재시작부터는 데모 데이터를 다시 채우지 않는다 — 판정 기준은 저장된 리포트의
+존재 여부다(`Store.list_cycles()`). `MA_SEED_DEMO_DATA=0`으로 완전히 끌 수도
+있다.
+
 ## 아키텍처
 
 원문 업로드 → 정규화 → 병렬 진단(D1 현황진단 ∥ D2 기회·리스크 ∥ D3 Critical
@@ -207,13 +222,16 @@ backend/app/
   agents_strategy.py          # STRATEGY (전략/타임라인: 전략의 3축 등)
   agents_actions.py            # ACTIONS (Action Items), V3 (총평 사실검증)
   orchestrator.py                # AGENT_CATALOG + run_pipeline
-  main.py                         # FastAPI 라우트
+  demo_fixture.py                 # 빈 저장소용 데모 리포트 (LLM 호출 없음)
+  main.py                          # FastAPI 라우트
 frontend/
   lib/schemas.ts          # zod 스키마 (백엔드 schemas.py와 1:1 대응) + 타입
   lib/api.ts               # API 클라이언트 (zod로 응답 검증)
   lib/query-provider.tsx     # TanStack QueryClientProvider
   components/                 # UploadForm, ReportView, ui.tsx
-  app/page.tsx                  # 대시보드 (useQuery/useMutation)
+  app/icon.tsx                 # 파비콘 (next/og ImageResponse)
+  app/apple-icon.tsx             # Apple 터치 아이콘
+  app/page.tsx                    # 대시보드 (useQuery/useMutation)
 docker-compose.yml    # backend + frontend 2개 서비스, SQLite는 볼륨 하나
 backend/Dockerfile    # 멀티스테이지: 의존성 레이어 → 런타임 (tini + 비루트)
 frontend/Dockerfile   # 멀티스테이지: standalone 빌드 → 최소 런타임

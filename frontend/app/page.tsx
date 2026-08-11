@@ -1,13 +1,17 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { runPipeline, getReport } from "@/lib/api";
 import { UploadForm } from "@/components/UploadForm";
 import { ReportView } from "@/components/ReportView";
 import { Button, ErrorNote, PageHeader } from "@/components/ui";
 
+// 백엔드가 저장소가 비어 있을 때 채워 넣는 데모 회차(app/demo_fixture.py) —
+// 첫 화면이 빈 상태로 보이지 않도록 기본값으로 바로 불러온다.
+const DEFAULT_CYCLE_ID = "demo-2026-W30";
+
 export default function Home() {
-  const [cycleId, setCycleId] = useState("2026-W32");
+  const [cycleId, setCycleId] = useState(DEFAULT_CYCLE_ID);
   const queryClient = useQueryClient();
 
   const reportQuery = useQuery({
@@ -22,6 +26,12 @@ export default function Home() {
       queryClient.setQueryData(["report", cycleId], data);
     },
   });
+
+  // 마운트 시 데모(또는 이전에 실행된) 회차를 한 번 자동으로 불러온다.
+  useEffect(() => {
+    reportQuery.refetch();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const report = runMutation.data ?? reportQuery.data;
   const error = runMutation.error ?? reportQuery.error;
