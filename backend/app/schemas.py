@@ -58,6 +58,11 @@ class ActionItem(BaseModel):
     owner: str
     due: str
     priority: Literal["high", "mid", "low"]
+    # knowledge-work-plugins의 marketing/performance-report·sales/pipeline-review
+    # 스킬이 쓰는 Impact/Effort 매트릭스 패턴 — priority만으로는 "왜 급한가"와
+    # "하기 쉬운가"가 섞여 보이지 않는다.
+    impact: Literal["high", "mid", "low"] = "mid"
+    effort: Literal["high", "mid", "low"] = "mid"
     source_item_ids: list[str] = Field(default_factory=list)
 
 
@@ -88,10 +93,25 @@ class ProcessStep(BaseModel):
     owner: str = ""
 
 
+class MetricSnapshot(BaseModel):
+    """성과 지표 스냅샷 — knowledge-work-plugins의 marketing/performance-report,
+    moai-cowork의 marketing-performance-report 스킬이 쓰는 "측정 → 관리 → 개선"
+    대시보드 패턴. current/prior/target은 원문에 있는 숫자만 담는다 — 시장
+    평균치 같은 외부 벤치마크는 원문에 없으면 만들어 넣지 않는다."""
+
+    metric: str
+    current: str
+    prior: str = ""
+    change: str = ""
+    target: str = ""
+    status: Literal["on_track", "at_risk", "off_track"] = "at_risk"
+
+
 class DiagnosisSummary(BaseModel):
     """현황진단을 임원 의사결정 형식으로 종합한 결과."""
 
     executive_summary: str = ""
+    metrics: list[MetricSnapshot] = Field(default_factory=list)
     customer_strategies: list[CustomerStrategy] = Field(default_factory=list)
     corporate_response_process: list[ProcessStep] = Field(default_factory=list)
 

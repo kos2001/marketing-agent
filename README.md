@@ -81,11 +81,38 @@ STRATEGY·ACTIONS·V3 총평 병렬) → 리포트.
 
 ### 리포트 구성
 
-- **현황진단**: Executive Summary, 채널별 진단, 고객(법인)별 대응 전략, 법인
-  대응 process
+- **현황진단**: Executive Summary, **지표 대시보드**(측정→관리→개선), 채널별
+  진단, 고객(법인)별 대응 전략, 법인 대응 process
 - **전략/타임라인**: 사안별 전략 가이드, 전략의 3축(정확히 3개), 권장
   타임라인(이미 반복 중인 사안일수록 이른 시점에 배치), 회차 간 연속성
-- **Action Items**: 즉시 확인 → 조치 필요 → 최종 요약
+- **Action Items**: 즉시 확인 → 조치 필요 → 최종 요약. 각 항목에 우선순위와
+  별개로 **Impact/Effort**를 붙여 "임팩트는 크지만 하기 쉬운 것"과 "긴급하지만
+  임팩트는 작은 것"을 구분한다.
+
+### 외부 플러그인 저장소 조사 반영 (2026-08-11)
+
+`anthropics/knowledge-work-plugins`(marketing/performance-report,
+sales/pipeline-review), `modu-ai/moai-cowork`(marketing-performance-report,
+data-provenance-auditor), `panaversity/agentfactory-business-plugins`
+(sales-revops-marketing/pipeline)를 조사해 두 가지를 적용했다:
+
+- **지표 대시보드** (`DiagnosisSummary.metrics`, SUMMARY 에이전트) —
+  performance-report류 스킬의 "지표/이전값/변화/목표/상태" 테이블 패턴. 단,
+  이 저장소의 그라운딩 규율을 지키기 위해 **원문에 없는 지표나 외부 시장
+  평균치는 만들어 넣지 않는다**고 프롬프트에 명시했다 — moai 쪽 스킬의 문서에
+  나온 "2025년 평균 전환율 1.99%" 같은 시장 벤치마크는 우리 파이프라인의
+  인용 대상이 아니므로 가져오지 않았다.
+- **Impact/Effort 매트릭스** (`ActionItem.impact`/`.effort`) —
+  performance-report의 2×2 우선순위 매트릭스, pipeline-review의 딜 우선순위
+  로직에서 가져온 개념. priority(긴급도)와 별개 축으로 둬 두 판단을 섞지
+  않는다.
+
+검토했지만 이번에는 적용하지 않은 것(향후 후보로 `2차 확장 후보`에 기록):
+`ai-slop-reviewer`류 서술 다듬기 후처리 패스, eval 골든셋 기반 회귀 테스트
+하네스(agentfactory-business-plugins의 `evals/` 패턴), 결정적 규칙 기반 리스크
+플래깅(예: "14일 이상 무활동 = 위험" — 우리는 이미 `repeat_count`로 일부
+구현했고, 나머지는 LLM 판단에 맡기는 현재 방식이 검증에서 잘 작동해 우선순위가
+낮다).
 
 ## 정확도 규율
 
@@ -132,3 +159,8 @@ frontend/
 - CRM/GA4 API 연동
 - 자기개선 품질 루프(판정 상수화·침묵 감지·근거 활용률 감시)
 - MCP 서버 마운트 (Claude Code에서 직접 조회)
+- 서술 필드(총평·Executive Summary) AI 티 제거 후처리 패스
+  (moai-cowork의 `ai-slop-reviewer` → `korean-humanize` 체인 참고)
+- eval 골든셋 기반 회귀 테스트 (agentfactory-business-plugins의 `evals/` 패턴 참고
+  — 지금은 StubChatClient 기반 결정적 테스트만 있고, 실 LLM 출력 품질을 추적하는
+  골든셋은 없다)

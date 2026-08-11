@@ -14,11 +14,11 @@ async def test_run_action_items_orders_immediate_then_needed_then_summary():
         "actions": {
             "immediate_check": [
                 {"title": "오픈율 급락 원인 긴급 점검", "owner": "마케팅팀", "due": "2026-08-12",
-                 "priority": "high", "source_item_ids": ["d1"]}
+                 "priority": "high", "impact": "high", "effort": "low", "source_item_ids": ["d1"]}
             ],
             "action_needed": [
                 {"title": "이메일 제목 A/B 테스트 실시", "owner": "마케팅팀", "due": "2026-08-25",
-                 "priority": "mid", "source_item_ids": ["d1"]}
+                 "priority": "mid", "impact": "mid", "effort": "high", "source_item_ids": ["d1"]}
             ],
             "final_summary": "오픈율 하락이 시급하며, 나머지는 순차 대응한다.",
         }
@@ -27,8 +27,27 @@ async def test_run_action_items_orders_immediate_then_needed_then_summary():
     assert len(report.immediate_check) == 1
     assert report.immediate_check[0].owner == "마케팅팀"
     assert report.immediate_check[0].source_item_ids == ["d1"]
+    assert report.immediate_check[0].impact == "high"
+    assert report.immediate_check[0].effort == "low"
     assert len(report.action_needed) == 1
     assert report.final_summary == "오픈율 하락이 시급하며, 나머지는 순차 대응한다."
+
+
+@pytest.mark.asyncio
+async def test_run_action_items_defaults_impact_effort_when_missing():
+    client = StubChatClient({
+        "actions": {
+            "immediate_check": [
+                {"title": "긴급 항목", "owner": "팀", "due": "2026-08-12", "priority": "high",
+                 "source_item_ids": []}
+            ],
+            "action_needed": [],
+            "final_summary": "",
+        }
+    })
+    report = await run_action_items(client, DIAG, OPP, CP)
+    assert report.immediate_check[0].impact == "mid"
+    assert report.immediate_check[0].effort == "mid"
 
 
 @pytest.mark.asyncio

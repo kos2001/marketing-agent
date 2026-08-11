@@ -45,3 +45,23 @@ async def test_run_summary_empty_customers_when_none_in_source():
     summary = await run_summary(client, SOURCES, DIAG, OPP, CP)
     assert summary.customer_strategies == []
     assert summary.corporate_response_process == []
+    assert summary.metrics == []
+
+
+@pytest.mark.asyncio
+async def test_run_summary_parses_metrics_dashboard():
+    client = StubChatClient({
+        "summary": {
+            "executive_summary": "요약.",
+            "metrics": [
+                {"metric": "오픈율", "current": "8%", "prior": "12%", "change": "-4%p",
+                 "target": "", "status": "off_track"}
+            ],
+            "customer_strategies": [],
+            "corporate_response_process": [],
+        }
+    })
+    summary = await run_summary(client, SOURCES, DIAG, OPP, CP)
+    assert len(summary.metrics) == 1
+    assert summary.metrics[0].metric == "오픈율"
+    assert summary.metrics[0].status == "off_track"

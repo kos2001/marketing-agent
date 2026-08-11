@@ -10,10 +10,13 @@ ACTIONS_SYSTEM = (
     "2) action_needed: 조치가 필요하지만 즉각적인 긴급성은 없는 항목.\n"
     "3) final_summary: 전체 Action Item을 한 문단으로 요약하는 최종 요약.\n\n"
     "각 Action Item은 title, owner(담당), due(YYYY-MM-DD), priority(\"high\"|\"mid\"|"
-    '"low"), source_item_ids(입력 항목의 id)를 갖습니다.\n\n'
+    '"low"), impact("high"|"mid"|"low", 실행했을 때 비즈니스 임팩트), effort("high"|'
+    '"mid"|"low", 실행 난이도/소요 리소스), source_item_ids(입력 항목의 id)를 '
+    "갖습니다. impact/effort는 우선순위와 별개 축입니다 — 임팩트가 크지만 실행이 "
+    "쉬운 항목과 임팩트는 작지만 긴급한 항목을 구분할 수 있어야 합니다.\n\n"
     'JSON 형식: {"immediate_check": [{"title": str, "owner": str, "due": str, '
-    '"priority": str, "source_item_ids": [str]}], "action_needed": [{...같은 형식...}], '
-    '"final_summary": str}.'
+    '"priority": str, "impact": str, "effort": str, "source_item_ids": [str]}], '
+    '"action_needed": [{...같은 형식...}], "final_summary": str}.'
 )
 
 OVERVIEW_SYSTEM = (
@@ -44,6 +47,8 @@ def _parse_action_items(items: list[dict]) -> list[ActionItem]:
             owner=it["owner"],
             due=it["due"],
             priority=it["priority"],
+            impact=it.get("impact", "mid"),
+            effort=it.get("effort", "mid"),
             source_item_ids=it.get("source_item_ids", []),
         )
         for it in items

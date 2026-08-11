@@ -116,6 +116,39 @@ export function PriorityBadge({ priority }: { priority: string }) {
   );
 }
 
+/** Impact/Effort 등 high/mid/low 3단계를 쓰는 다른 축에 재사용하는 배지. */
+export function LevelBadge({ label, level }: { label: string; level: string }) {
+  return (
+    <span
+      className={`inline-flex items-center whitespace-nowrap rounded-full border px-2.5 py-0.5 text-[11px] font-medium ${priorityStyle[level] ?? priorityStyle.low}`}
+    >
+      {label} {priorityLabel[level] ?? level}
+    </span>
+  );
+}
+
+const metricStatusStyle: Record<string, string> = {
+  on_track: "bg-emerald-950/60 text-emerald-400 border-emerald-900/60",
+  at_risk: "bg-amber-950/60 text-amber-400 border-amber-900/60",
+  off_track: "bg-red-950/60 text-red-400 border-red-900/60",
+};
+
+const metricStatusLabel: Record<string, string> = {
+  on_track: "온트랙",
+  at_risk: "주의",
+  off_track: "위험",
+};
+
+export function MetricStatusBadge({ status }: { status: string }) {
+  return (
+    <span
+      className={`inline-flex items-center whitespace-nowrap rounded-full border px-2.5 py-0.5 text-[11px] font-medium ${metricStatusStyle[status] ?? metricStatusStyle.at_risk}`}
+    >
+      {metricStatusLabel[status] ?? status}
+    </span>
+  );
+}
+
 export function Tag({ children }: { children: ReactNode }) {
   return (
     <span className="inline-flex items-center rounded-md bg-zinc-800 px-2 py-0.5 text-[11px] text-zinc-400">

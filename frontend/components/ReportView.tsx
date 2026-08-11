@@ -1,5 +1,16 @@
 import type { ActionItem, CycleReport } from "@/lib/api";
-import { Card, PriorityBadge, SectionTitle, StatusBadge, Tag, Td, Th, TableCard } from "@/components/ui";
+import {
+  Card,
+  LevelBadge,
+  MetricStatusBadge,
+  PriorityBadge,
+  SectionTitle,
+  StatusBadge,
+  Tag,
+  Td,
+  Th,
+  TableCard,
+} from "@/components/ui";
 
 function ActionItemsTable({ items }: { items: ActionItem[] }) {
   return (
@@ -10,12 +21,14 @@ function ActionItemsTable({ items }: { items: ActionItem[] }) {
           <Th>담당</Th>
           <Th>기한</Th>
           <Th>우선순위</Th>
+          <Th>임팩트</Th>
+          <Th>실행난이도</Th>
         </tr>
       </thead>
       <tbody>
         {items.length === 0 && (
           <tr>
-            <Td className="text-zinc-500" colSpan={4}>
+            <Td className="text-zinc-500" colSpan={6}>
               항목 없음
             </Td>
           </tr>
@@ -27,6 +40,12 @@ function ActionItemsTable({ items }: { items: ActionItem[] }) {
             <Td>{a.due}</Td>
             <Td>
               <PriorityBadge priority={a.priority} />
+            </Td>
+            <Td>
+              <LevelBadge label="임팩트" level={a.impact} />
+            </Td>
+            <Td>
+              <LevelBadge label="난이도" level={a.effort} />
             </Td>
           </tr>
         ))}
@@ -55,6 +74,43 @@ export function ReportView({ report }: { report: CycleReport }) {
             <p className="text-sm leading-relaxed text-zinc-200">{summary.executive_summary}</p>
             <p className="mt-3 text-xs text-zinc-500">{report.coverage_note}</p>
           </Card>
+
+          <div>
+            <SectionTitle>지표 대시보드</SectionTitle>
+            <TableCard>
+              <thead>
+                <tr className="border-b border-zinc-800">
+                  <Th>지표</Th>
+                  <Th>이번 값</Th>
+                  <Th>이전 값</Th>
+                  <Th>변화</Th>
+                  <Th>목표</Th>
+                  <Th>상태</Th>
+                </tr>
+              </thead>
+              <tbody>
+                {summary.metrics.length === 0 && (
+                  <tr>
+                    <Td className="text-zinc-500" colSpan={6}>
+                      원문에서 식별된 정량 지표 없음
+                    </Td>
+                  </tr>
+                )}
+                {summary.metrics.map((m, i) => (
+                  <tr key={i} className="border-b border-zinc-800 last:border-0">
+                    <Td>{m.metric}</Td>
+                    <Td>{m.current}</Td>
+                    <Td>{m.prior || "—"}</Td>
+                    <Td>{m.change || "—"}</Td>
+                    <Td>{m.target || "—"}</Td>
+                    <Td>
+                      <MetricStatusBadge status={m.status} />
+                    </Td>
+                  </tr>
+                ))}
+              </tbody>
+            </TableCard>
+          </div>
 
           <Card>
             <SectionTitle>채널별 진단</SectionTitle>

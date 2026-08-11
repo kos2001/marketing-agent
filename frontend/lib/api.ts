@@ -46,6 +46,8 @@ export interface ActionItem {
   owner: string;
   due: string;
   priority: "high" | "mid" | "low";
+  impact: "high" | "mid" | "low";
+  effort: "high" | "mid" | "low";
   source_item_ids: string[];
 }
 
@@ -70,8 +72,18 @@ export interface ProcessStep {
   owner: string;
 }
 
+export interface MetricSnapshot {
+  metric: string;
+  current: string;
+  prior: string;
+  change: string;
+  target: string;
+  status: "on_track" | "at_risk" | "off_track";
+}
+
 export interface DiagnosisSummary {
   executive_summary: string;
+  metrics: MetricSnapshot[];
   customer_strategies: CustomerStrategy[];
   corporate_response_process: ProcessStep[];
 }
