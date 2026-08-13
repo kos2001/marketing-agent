@@ -1,7 +1,7 @@
 from __future__ import annotations
 import os
 import uuid
-from fastapi import FastAPI, HTTPException, Depends
+from fastapi import FastAPI, HTTPException, Depends, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
@@ -11,6 +11,9 @@ from .llm import ChatClient, HttpChatClient
 from .schemas import SourceDoc, SourceType, CycleReport
 from .orchestrator import run_pipeline
 from .demo_fixture import seed_demo_data
+from .doctext import extract_text, UnsupportedDocumentError, SUPPORTED_EXTENSIONS
+
+_MAX_UPLOAD_BYTES = 10 * 1024 * 1024  # 10MB — 텍스트 문서 기준으로 충분히 넉넉한 상한
 
 app = FastAPI(title="marketing-agent")
 app.add_middleware(
@@ -65,6 +68,39 @@ def add_source(payload: SourceIn, store: Store = Depends(get_store)):
     )
     store.add_source(doc)
     return {"id": doc.id}
+
+
+@app.get("/upload-formats")
+def upload_formats():
+    return list(SUPPORTED_EXTENSIONS)
+
+
+@app.post("/sources/upload")
+async def upload_source(
+    cycle_id: str = Form(...),
+    source_type: SourceType = Form("upload"),
+    title: str | None = Form(None),
+    file: UploadFile = File(...),
+    store: Store = Depends(get_store),
+):
+    """PDF/DOCX/TXT/MD 문서를 업로드해 텍스트를 추출하고 소스로 저장한다."""
+    filename = file.filename or "업로드 문서"
+    content = await file.read()
+    if len(content) > _MAX_UPLOAD_BYTES:
+        raise HTTPException(status_code=413, detail="파일이 너무 큽니다 (최대 10MB)")
+    try:
+        text = extract_text(filename, content)
+    except UnsupportedDocumentError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    if not text.strip():
+        raise HTTPException(status_code=422, detail="문서에서 텍스트를 추출하지 못했습니다")
+
+    doc = SourceDoc(
+        id=f"s-{uuid.uuid4().hex[:8]}", cycle_id=cycle_id, title=title or filename, text=text,
+        source_type=source_type,
+    )
+    store.add_source(doc)
+    return {"id": doc.id, "extracted_chars": len(text)}
 
 
 @app.get("/sources/{cycle_id}", response_model=list[SourceDoc])

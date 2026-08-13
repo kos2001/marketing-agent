@@ -93,6 +93,16 @@ MA_LLM_MODEL=marketing-agent
 존재 여부다(`Store.list_cycles()`). `MA_SEED_DEMO_DATA=0`으로 완전히 끌 수도
 있다.
 
+### 문서 업로드
+
+텍스트 붙여넣기 외에 파일로도 자료를 추가할 수 있다 — `POST /sources/upload`
+(multipart, 최대 10MB)가 `app/doctext.py`로 텍스트를 추출해 저장한다. 지원
+형식은 `GET /upload-formats`로 조회한다(txt/md/pdf/docx). PDF는 `pypdf`,
+DOCX는 `python-docx`를 쓴다 — `~/gitspace/mi-report`의 PDF 추출기는
+PyMuPDF(AGPL-3.0)인데, 이 저장소는 외부 배포 가능성을 열어 두려고 허용적
+라이선스(BSD/MIT)만 골랐다. 스캔 PDF·OCR·xlsx/pptx는 범위 밖이다(추출된
+텍스트가 비어 있으면 422로 거부한다 — 빈 리포트를 만들지 않는다).
+
 ## 아키텍처
 
 원문 업로드 → 정규화 → 병렬 진단(D1 현황진단 ∥ D2 기회·리스크 ∥ D3 Critical
@@ -215,7 +225,8 @@ backend/app/
   schemas.py           # 도메인 모델 (Pydantic)
   llm.py                # ChatClient 프로토콜 + HTTP 구현 + JSON 추출
   grounding.py           # 축자 인용 대조
-  storage.py              # SQLite 저장소
+  doctext.py              # 업로드 문서(txt/md/pdf/docx) 텍스트 추출
+  storage.py                # SQLite 저장소
   agents_diagnosis.py      # D1/D2/D3, V, V2
   agents_timeline.py        # T1 (반박 검증 포함)
   agents_summary.py          # SUMMARY (현황진단 종합: Executive Summary 등)

@@ -116,3 +116,55 @@ def test_get_sources_for_empty_cycle(client):
     resp = client.get("/sources/nope")
     assert resp.status_code == 200
     assert resp.json() == []
+
+
+def test_upload_formats_lists_supported_extensions(client):
+    resp = client.get("/upload-formats")
+    assert resp.status_code == 200
+    formats = resp.json()
+    assert ".pdf" in formats
+    assert ".docx" in formats
+    assert ".txt" in formats
+
+
+def test_upload_source_txt_file(client, store):
+    files = {"file": ("메모.txt", "CRM 파이프라인 현황".encode("utf-8"), "text/plain")}
+    resp = client.post(
+        "/sources/upload",
+        data={"cycle_id": "c1", "source_type": "crm"},
+        files=files,
+    )
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["extracted_chars"] > 0
+
+    docs = store.sources_for_cycle("c1")
+    assert len(docs) == 1
+    assert docs[0].source_type == "crm"
+    assert docs[0].title == "메모.txt"
+    assert "CRM" in docs[0].text
+
+
+def test_upload_source_uses_custom_title(client, store):
+    files = {"file": ("메모.txt", "본문 내용".encode("utf-8"), "text/plain")}
+    resp = client.post(
+        "/sources/upload",
+        data={"cycle_id": "c1", "title": "9월 CRM 내보내기"},
+        files=files,
+    )
+    assert resp.status_code == 200
+    docs = store.sources_for_cycle("c1")
+    assert docs[0].title == "9월 CRM 내보내기"
+    assert docs[0].source_type == "upload"
+
+
+def test_upload_source_rejects_unsupported_extension(client):
+    files = {"file": ("data.xlsx", b"...", "application/octet-stream")}
+    resp = client.post("/sources/upload", data={"cycle_id": "c1"}, files=files)
+    assert resp.status_code == 400
+
+
+def test_upload_source_rejects_empty_extracted_text(client):
+    files = {"file": ("empty.txt", b"   \n  ", "text/plain")}
+    resp = client.post("/sources/upload", data={"cycle_id": "c1"}, files=files)
+    assert resp.status_code == 422

@@ -164,7 +164,9 @@ export const SourceDocSchema = z.object({
 export const SourceDocListSchema = z.array(SourceDocSchema);
 
 export const AddSourceResponseSchema = z.object({ id: z.string() });
+export const UploadSourceResponseSchema = z.object({ id: z.string(), extracted_chars: z.number() });
 export const CycleListSchema = z.array(z.string());
+export const UploadFormatsSchema = z.array(z.string());
 
 export type SourceType = z.infer<typeof SourceTypeSchema>;
 export type SourceDoc = z.infer<typeof SourceDocSchema>;

@@ -8,7 +8,8 @@
 # ── 빌드 단계: 의존성만 먼저 설치해 앱 코드 변경 시에도 이 레이어를 캐시한다 ──
 FROM python:3.12-slim AS deps
 RUN pip install --no-cache-dir --target=/opt/deps \
-    "fastapi[standard]>=0.110" "uvicorn[standard]>=0.29" "pydantic>=2.6" "httpx>=0.27"
+    "fastapi[standard]>=0.110" "uvicorn[standard]>=0.29" "pydantic>=2.6" "httpx>=0.27" \
+    "pypdf>=4.0" "python-docx>=1.1"
 
 # ── 런타임 단계 ────────────────────────────────────────────────
 FROM python:3.12-slim

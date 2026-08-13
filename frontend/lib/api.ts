@@ -3,6 +3,8 @@ import {
   CycleListSchema,
   CycleReportSchema,
   SourceDocListSchema,
+  UploadFormatsSchema,
+  UploadSourceResponseSchema,
   type CycleReport,
   type SourceDoc,
   type SourceType,
@@ -70,4 +72,30 @@ export async function getSources(cycleId: string): Promise<SourceDoc[]> {
   const res = await fetch(`${BASE}/sources/${encodeURIComponent(cycleId)}`);
   if (!res.ok) throw new Error(`수집 자료 조회 실패: ${res.status}`);
   return SourceDocListSchema.parse(await res.json());
+}
+
+export async function getUploadFormats(): Promise<string[]> {
+  const res = await fetch(`${BASE}/upload-formats`);
+  if (!res.ok) throw new Error(`업로드 형식 조회 실패: ${res.status}`);
+  return UploadFormatsSchema.parse(await res.json());
+}
+
+export async function uploadSourceFile(
+  cycleId: string,
+  file: File,
+  sourceType: SourceType = "upload",
+  title?: string,
+): Promise<{ id: string; extracted_chars: number }> {
+  const form = new FormData();
+  form.append("cycle_id", cycleId);
+  form.append("source_type", sourceType);
+  if (title) form.append("title", title);
+  form.append("file", file);
+
+  const res = await fetch(`${BASE}/sources/upload`, { method: "POST", body: form });
+  if (!res.ok) {
+    const detail = await res.json().catch(() => null);
+    throw new Error(detail?.detail || `문서 업로드 실패: ${res.status}`);
+  }
+  return UploadSourceResponseSchema.parse(await res.json());
 }
