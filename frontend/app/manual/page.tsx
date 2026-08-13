@@ -8,18 +8,19 @@ export default function ManualPage() {
         <Card>
           <SectionTitle>1. 자료 추가</SectionTitle>
           <p className="text-sm leading-relaxed text-zinc-300">
-            대시보드에서 회차(예: 2026-W33)를 정하고, 영업/마케팅 자료를 소스 종류(이메일
-            캠페인·소셜미디어·CRM·애널리틱스·고객 피드백/VoC·뉴스·업로드 문서·직접 입력)와
-            함께 추가합니다. 같은 회차에 여러 자료를 올릴수록 진단이 다양한 채널을 아우르게
+            <strong>수집 자료</strong> 페이지에서 회차(예: 2026-W33)를 정하고, 영업/마케팅
+            자료를 소스 종류(이메일 캠페인·소셜미디어·CRM·애널리틱스·고객 피드백/VoC·뉴스·
+            업로드 문서·직접 입력)와 함께 텍스트로 붙여넣거나 문서(txt/md/pdf/docx)로
+            업로드합니다. 같은 회차에 여러 자료를 올릴수록 진단이 다양한 채널을 아우르게
             됩니다.
           </p>
         </Card>
         <Card>
           <SectionTitle>2. 파이프라인 실행</SectionTitle>
           <p className="text-sm leading-relaxed text-zinc-300">
-            "파이프라인 실행"을 누르면 10개 에이전트(현황진단·기회리스크·Critical Point·
-            독립 교차검증·타임라인·종합·전략·Action Items·총평 사실검증)가 원문만 근거로
-            돌아갑니다. 자료 양에 따라 수 분이 걸릴 수 있습니다.
+            대시보드에서 "파이프라인 실행"을 누르면 10개 에이전트(현황진단·기회리스크·
+            Critical Point·독립 교차검증·타임라인·종합·전략·Action Items·총평 사실검증)가
+            원문만 근거로 돌아갑니다. 자료 양에 따라 수 분이 걸릴 수 있습니다.
           </p>
         </Card>
         <Card>
