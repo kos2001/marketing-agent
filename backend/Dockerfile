@@ -9,7 +9,7 @@
 FROM python:3.12-slim AS deps
 RUN pip install --no-cache-dir --target=/opt/deps \
     "fastapi[standard]>=0.110" "uvicorn[standard]>=0.29" "pydantic>=2.6" "httpx>=0.27" \
-    "pypdf>=4.0" "python-docx>=1.1"
+    "pypdf>=4.0" "python-docx>=1.1" "python-pptx>=1.0"
 
 # ── 런타임 단계 ────────────────────────────────────────────────
 FROM python:3.12-slim

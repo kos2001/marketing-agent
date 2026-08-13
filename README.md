@@ -97,10 +97,11 @@ MA_LLM_MODEL=marketing-agent
 
 텍스트 붙여넣기 외에 파일로도 자료를 추가할 수 있다 — `POST /sources/upload`
 (multipart, 최대 10MB)가 `app/doctext.py`로 텍스트를 추출해 저장한다. 지원
-형식은 `GET /upload-formats`로 조회한다(txt/md/pdf/docx). PDF는 `pypdf`,
-DOCX는 `python-docx`를 쓴다 — `~/gitspace/mi-report`의 PDF 추출기는
-PyMuPDF(AGPL-3.0)인데, 이 저장소는 외부 배포 가능성을 열어 두려고 허용적
-라이선스(BSD/MIT)만 골랐다. 스캔 PDF·OCR·xlsx/pptx는 범위 밖이다(추출된
+형식은 `GET /upload-formats`로 조회한다(txt/md/pdf/docx/pptx — Word/PPT/PDF
+모두 지원). PDF는 `pypdf`, DOCX는 `python-docx`, PPTX는 `python-pptx`를
+쓴다(슬라이드 구분은 `--- slide n ---`) — `~/gitspace/mi-report`의 PDF
+추출기는 PyMuPDF(AGPL-3.0)인데, 이 저장소는 외부 배포 가능성을 열어 두려고
+허용적 라이선스(BSD/MIT)만 골랐다. 스캔 PDF·OCR·xlsx는 범위 밖이다(추출된
 텍스트가 비어 있으면 422로 거부한다 — 빈 리포트를 만들지 않는다).
 
 ## 아키텍처
@@ -225,7 +226,7 @@ backend/app/
   schemas.py           # 도메인 모델 (Pydantic)
   llm.py                # ChatClient 프로토콜 + HTTP 구현 + JSON 추출
   grounding.py           # 축자 인용 대조
-  doctext.py              # 업로드 문서(txt/md/pdf/docx) 텍스트 추출
+  doctext.py              # 업로드 문서(txt/md/pdf/docx/pptx) 텍스트 추출
   storage.py                # SQLite 저장소
   agents_diagnosis.py      # D1/D2/D3, V, V2
   agents_timeline.py        # T1 (반박 검증 포함)
@@ -245,12 +246,13 @@ frontend/
   app/icon.tsx                   # 파비콘 (next/og ImageResponse)
   app/apple-icon.tsx               # Apple 터치 아이콘
   app/page.tsx                      # 대시보드
-  app/sources/page.tsx                # 수집 자료
-  app/diagnosis/page.tsx                # 현황진단
-  app/strategy/page.tsx                   # 전략/타임라인
-  app/actions/page.tsx                      # Action Items
-  app/history/page.tsx                        # 회차 히스토리
-  app/manual/page.tsx                           # 사용 안내
+  app/sources/page.tsx                # 수집 자료 (자료 추가 + 목록)
+  app/sources/results/page.tsx          # 수집 결과 (KPI + 소스 종류별 집계)
+  app/diagnosis/page.tsx                  # 현황진단
+  app/strategy/page.tsx                     # 전략/타임라인
+  app/actions/page.tsx                        # Action Items
+  app/history/page.tsx                          # 회차 히스토리
+  app/manual/page.tsx                             # 사용 안내
 docker-compose.yml    # backend + frontend 2개 서비스, SQLite는 볼륨 하나
 backend/Dockerfile    # 멀티스테이지: 의존성 레이어 → 런타임 (tini + 비루트)
 frontend/Dockerfile   # 멀티스테이지: standalone 빌드 → 최소 런타임
@@ -261,18 +263,27 @@ frontend/Dockerfile   # 멀티스테이지: standalone 빌드 → 최소 런타�
 `~/gitspace/mi-report`(사내 시장정보 리포트 하네스)는 대시보드 하나에 모든
 걸 몰아넣지 않고, 사이드바로 데이터 수집·주제별·다이제스트·경쟁사·리포트·
 히스토리·매뉴얼을 각각의 페이지로 나눈다. 이 프로젝트도 원래 페이지 하나에
-전체 리포트를 스크롤하는 구조였는데, 그 페이지 조직 패턴을 옮겨 7개 라우트로
+전체 리포트를 스크롤하는 구조였는데, 그 페이지 조직 패턴을 옮겨 8개 라우트로
 나눴다:
 
 | 라우트 | mi-report의 대응 페이지 | 내용 |
 |---|---|---|
-| `/` | 대시보드 | 회차 선택, 자료 업로드, 파이프라인 실행, 총평 |
-| `/sources` | 수집 결과/수집 문서 | 이 회차에 올라온 원문(소스 종류 태그와 함께) |
+| `/` | 대시보드 | 회차 선택, 파이프라인 실행, 총평 |
+| `/sources` | 데이터 수집(의 "업로드" 탭) | 자료 추가(텍스트/문서) + 이 회차의 원문 목록 |
+| `/sources/results` | 수집 결과 | KPI(자료 수·소스 종류 수·텍스트 분량·전체 회차)와 소스 종류별 집계 |
 | `/diagnosis` | 주간 리포트(의 일부) | 현황진단 전 구간 |
 | `/strategy` | 주제별 History(의 일부) | 전략/타임라인 전 구간 |
 | `/actions` | 주간 리포트(의 일부) | Action Items 전 구간 |
 | `/history` | 생성물 이력 | 지금까지 생성된 모든 회차 목록 |
 | `/manual` | 사용 안내 | 사용 순서 안내 |
+
+처음에는 자료 추가 폼(`UploadForm`)을 대시보드에 뒀는데, mi-report의
+`/collection` 페이지를 다시 보니 업로드는 데이터 수집 페이지 안에만 있고
+대시보드에는 없었다 — 대시보드는 상태/실행 화면이고 자료 관리는 수집
+페이지의 역할이라 `/sources`로 옮겼다. `/sources/results`는 mi-report의
+`/collection/results`(소스별 건수·상태 KPI)를 회차 단위로 좁혀 옮긴
+것이다 — mi-report는 커넥터가 지속 수집하는 전체 코퍼스를 다루지만, 이
+프로젝트는 회차 스코프라 "이 회차의 수집 현황"으로 범위를 좁혔다.
 
 mi-report에는 있지만 옮기지 않은 페이지: 뉴스 다이제스트·경쟁사 IR·문서
 Q&A·스케줄·VOC — 각각 뉴스 스크래핑·재무공시 연동·RAG 코퍼스·크론·VoC

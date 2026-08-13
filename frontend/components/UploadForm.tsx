@@ -5,7 +5,7 @@ import { Button, Card, ErrorNote, SectionTitle } from "@/components/ui";
 
 const SOURCE_TYPES = Object.keys(SOURCE_TYPE_LABEL) as SourceType[];
 // backend/app/doctext.py의 SUPPORTED_EXTENSIONS와 맞춘다.
-const ACCEPTED_EXTENSIONS = ".txt,.md,.pdf,.docx";
+const ACCEPTED_EXTENSIONS = ".txt,.md,.pdf,.docx,.pptx";
 
 type Mode = "paste" | "file";
 
@@ -128,7 +128,7 @@ export function UploadForm({ cycleId, onUploaded }: { cycleId: string; onUploade
               onChange={(e) => setFile(e.target.files?.[0] ?? null)}
               className="rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm text-zinc-300 file:mr-3 file:rounded-md file:border-0 file:bg-zinc-800 file:px-3 file:py-1.5 file:text-xs file:text-zinc-200"
             />
-            <p className="text-xs text-zinc-500">지원 형식: txt, md, pdf, docx (최대 10MB)</p>
+            <p className="text-xs text-zinc-500">지원 형식: txt, md, pdf, docx, pptx (최대 10MB)</p>
             {info && <p className="text-xs text-emerald-400">{info}</p>}
             {error && <ErrorNote message={error} />}
             <div>

@@ -10,7 +10,7 @@ export default function ManualPage() {
           <p className="text-sm leading-relaxed text-zinc-300">
             <strong>수집 자료</strong> 페이지에서 회차(예: 2026-W33)를 정하고, 영업/마케팅
             자료를 소스 종류(이메일 캠페인·소셜미디어·CRM·애널리틱스·고객 피드백/VoC·뉴스·
-            업로드 문서·직접 입력)와 함께 텍스트로 붙여넣거나 문서(txt/md/pdf/docx)로
+            업로드 문서·직접 입력)와 함께 텍스트로 붙여넣거나 문서(txt/md/pdf/docx/pptx)로
             업로드합니다. 같은 회차에 여러 자료를 올릴수록 진단이 다양한 채널을 아우르게
             됩니다.
           </p>

@@ -37,6 +37,27 @@ def test_extract_text_pdf_blank_page_returns_empty():
     assert result == ""
 
 
+def test_extract_text_pptx_roundtrip():
+    pptx = pytest.importorskip("pptx")
+    prs = pptx.Presentation()
+    slide_layout = prs.slide_layouts[1]
+    slide1 = prs.slides.add_slide(slide_layout)
+    slide1.shapes.title.text = "8월 캠페인 현황"
+    slide1.placeholders[1].text = "오픈율이 12%에서 8%로 하락했다."
+    slide2 = prs.slides.add_slide(slide_layout)
+    slide2.shapes.title.text = "다음 단계"
+    slide2.placeholders[1].text = "콘텐츠 개선안을 수립한다."
+    buf = io.BytesIO()
+    prs.save(buf)
+
+    result = extract_text("발표자료.pptx", buf.getvalue())
+    assert "--- slide 1 ---" in result
+    assert "8월 캠페인 현황" in result
+    assert "오픈율이 12%에서 8%로 하락했다." in result
+    assert "--- slide 2 ---" in result
+    assert "콘텐츠 개선안을 수립한다." in result
+
+
 def test_extract_text_unsupported_extension_raises():
     with pytest.raises(UnsupportedDocumentError):
         extract_text("데이터.xlsx", b"...")
