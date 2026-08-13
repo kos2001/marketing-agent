@@ -15,6 +15,15 @@ def test_add_and_fetch_sources():
     docs = store.sources_for_cycle("2026-W32")
     assert len(docs) == 1
     assert docs[0].text == "오픈율 12%"
+    assert docs[0].source_type == "manual"
+
+
+def test_add_source_preserves_source_type():
+    store = make_store()
+    store.add_source(SourceDoc(id="s1", cycle_id="2026-W32", title="CRM 내보내기",
+                                text="파이프라인 현황", source_type="crm"))
+    docs = store.sources_for_cycle("2026-W32")
+    assert docs[0].source_type == "crm"
 
 
 def test_save_and_get_report_roundtrip():

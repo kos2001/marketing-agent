@@ -30,11 +30,15 @@ RESPONSES = {
 
 
 @pytest.fixture
-def client():
+def store():
     fd, path = tempfile.mkstemp(suffix=".db")
     os.close(fd)
-    test_store = Store(path)
-    app.dependency_overrides[get_store] = lambda: test_store
+    return Store(path)
+
+
+@pytest.fixture
+def client(store):
+    app.dependency_overrides[get_store] = lambda: store
     app.dependency_overrides[get_client] = lambda: StubChatClient(RESPONSES)
     with TestClient(app) as c:
         yield c
@@ -70,3 +74,45 @@ def test_get_report_and_list_cycles(client):
 def test_get_missing_report_404(client):
     resp = client.get("/reports/nope")
     assert resp.status_code == 404
+
+
+def test_source_types_lists_diverse_sources(client):
+    resp = client.get("/source-types")
+    assert resp.status_code == 200
+    types = resp.json()
+    assert "email" in types
+    assert "crm" in types
+    assert "social" in types
+    assert "customer_feedback" in types
+
+
+def test_add_source_with_source_type(client, store):
+    resp = client.post("/sources", json={"cycle_id": "c1", "title": "CRM 파이프라인", "text": "...", "source_type": "crm"})
+    assert resp.status_code == 200
+    docs = store.sources_for_cycle("c1")
+    assert docs[0].source_type == "crm"
+
+
+def test_add_source_defaults_to_manual(client, store):
+    resp = client.post("/sources", json={"cycle_id": "c1", "title": "메모", "text": "..."})
+    assert resp.status_code == 200
+    docs = store.sources_for_cycle("c1")
+    assert docs[0].source_type == "manual"
+
+
+def test_get_sources_for_cycle(client):
+    client.post("/sources", json={"cycle_id": "c1", "title": "CRM", "text": "...", "source_type": "crm"})
+    client.post("/sources", json={"cycle_id": "c1", "title": "이메일", "text": "...", "source_type": "email"})
+    client.post("/sources", json={"cycle_id": "c2", "title": "다른 회차", "text": "..."})
+
+    resp = client.get("/sources/c1")
+    assert resp.status_code == 200
+    docs = resp.json()
+    assert len(docs) == 2
+    assert {d["source_type"] for d in docs} == {"crm", "email"}
+
+
+def test_get_sources_for_empty_cycle(client):
+    resp = client.get("/sources/nope")
+    assert resp.status_code == 200
+    assert resp.json() == []

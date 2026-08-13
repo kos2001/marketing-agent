@@ -33,13 +33,22 @@ beforeEach(() => {
 });
 
 describe("api client", () => {
-  it("addSource posts cycle_id/title/text and returns id", async () => {
+  it("addSource posts cycle_id/title/text/source_type (default manual) and returns id", async () => {
     (fetch as any).mockResolvedValue({ ok: true, json: async () => ({ id: "s-1" }) });
     const result = await addSource("c1", "이메일", "본문");
     expect(result.id).toBe("s-1");
     const [url, opts] = (fetch as any).mock.calls[0];
     expect(url).toContain("/sources");
-    expect(JSON.parse(opts.body)).toEqual({ cycle_id: "c1", title: "이메일", text: "본문" });
+    expect(JSON.parse(opts.body)).toEqual({
+      cycle_id: "c1", title: "이메일", text: "본문", source_type: "manual",
+    });
+  });
+
+  it("addSource sends the given source_type", async () => {
+    (fetch as any).mockResolvedValue({ ok: true, json: async () => ({ id: "s-1" }) });
+    await addSource("c1", "CRM 내보내기", "...", "crm");
+    const [, opts] = (fetch as any).mock.calls[0];
+    expect(JSON.parse(opts.body).source_type).toBe("crm");
   });
 
   it("runPipeline posts to /pipeline/run and parses a valid CycleReport", async () => {

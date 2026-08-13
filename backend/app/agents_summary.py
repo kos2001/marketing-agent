@@ -45,7 +45,7 @@ SUMMARY_SYSTEM = (
 
 
 def _sources_text(sources: list[SourceDoc]) -> str:
-    return "\n\n".join(f"[{s.id}] {s.title}\n{s.text}" for s in sources)
+    return "\n\n".join(f"[{s.id}] ({s.source_type}) {s.title}\n{s.text}" for s in sources)
 
 
 def _source_map(sources: list[SourceDoc]) -> dict[str, str]:

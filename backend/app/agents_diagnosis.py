@@ -6,7 +6,11 @@ from .schemas import SourceDoc, DiagnosisItem, Citation, OpportunityRiskItem, Cr
 
 D1_SYSTEM = (
     "당신은 영업/마케팅 현황진단관입니다. 주어진 원문 자료만 근거로 채널·캠페인별 "
-    "강점과 약점을 찾아 JSON으로만 답하십시오. 형식: "
+    "강점과 약점을 찾아 JSON으로만 답하십시오. 각 자료 앞의 괄호는 사용자가 태깅한 "
+    "소스 종류입니다(email=이메일 캠페인, social=소셜미디어, crm=CRM/영업 파이프라인, "
+    "analytics=웹/앱 애널리틱스, customer_feedback=고객 피드백/VoC, news=뉴스/경쟁사 "
+    "동향, upload=업로드 문서, manual=미분류). 채널명을 정할 때 이 태그를 참고하되, "
+    "본문 내용과 어긋나면 본문을 우선하십시오. 형식: "
     '{"items": [{"channel": str, "summary": str, "kind": "strength"|"weakness", '
     '"citations": [{"quote": str, "source_id": str}]}]}. '
     "quote는 원문에서 그대로 축자 인용해야 합니다. 근거 없는 문장은 만들지 마십시오."
@@ -40,7 +44,7 @@ V2_SYSTEM = (
 
 
 def _sources_text(sources: list[SourceDoc]) -> str:
-    return "\n\n".join(f"[{s.id}] {s.title}\n{s.text}" for s in sources)
+    return "\n\n".join(f"[{s.id}] ({s.source_type}) {s.title}\n{s.text}" for s in sources)
 
 
 def _source_map(sources: list[SourceDoc]) -> dict[str, str]:

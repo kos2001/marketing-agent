@@ -12,8 +12,16 @@ class Store:
         self._conn = sqlite3.connect(path, check_same_thread=False)
         self._conn.execute(
             "CREATE TABLE IF NOT EXISTS sources ("
-            "id TEXT PRIMARY KEY, cycle_id TEXT, title TEXT, text TEXT)"
+            "id TEXT PRIMARY KEY, cycle_id TEXT, title TEXT, text TEXT, "
+            "source_type TEXT NOT NULL DEFAULT 'manual')"
         )
+        # 기존 DB(마이그레이션 전)에 만든 sources 테이블에는 이 컬럼이 없다 —
+        # 새 컬럼을 조건부로 추가해 예전 볼륨을 쓰는 배포에서도 깨지지 않게 한다.
+        existing_cols = {row[1] for row in self._conn.execute("PRAGMA table_info(sources)")}
+        if "source_type" not in existing_cols:
+            self._conn.execute(
+                "ALTER TABLE sources ADD COLUMN source_type TEXT NOT NULL DEFAULT 'manual'"
+            )
         self._conn.execute(
             "CREATE TABLE IF NOT EXISTS reports ("
             "cycle_id TEXT PRIMARY KEY, seq INTEGER, data TEXT)"
@@ -22,16 +30,16 @@ class Store:
 
     def add_source(self, doc: SourceDoc) -> None:
         self._conn.execute(
-            "INSERT OR REPLACE INTO sources (id, cycle_id, title, text) VALUES (?, ?, ?, ?)",
-            (doc.id, doc.cycle_id, doc.title, doc.text),
+            "INSERT OR REPLACE INTO sources (id, cycle_id, title, text, source_type) VALUES (?, ?, ?, ?, ?)",
+            (doc.id, doc.cycle_id, doc.title, doc.text, doc.source_type),
         )
         self._conn.commit()
 
     def sources_for_cycle(self, cycle_id: str) -> list[SourceDoc]:
         rows = self._conn.execute(
-            "SELECT id, cycle_id, title, text FROM sources WHERE cycle_id = ?", (cycle_id,)
+            "SELECT id, cycle_id, title, text, source_type FROM sources WHERE cycle_id = ?", (cycle_id,)
         ).fetchall()
-        return [SourceDoc(id=r[0], cycle_id=r[1], title=r[2], text=r[3]) for r in rows]
+        return [SourceDoc(id=r[0], cycle_id=r[1], title=r[2], text=r[3], source_type=r[4]) for r in rows]
 
     def save_report(self, report: CycleReport) -> None:
         seq_row = self._conn.execute("SELECT COALESCE(MAX(seq), 0) FROM reports").fetchone()

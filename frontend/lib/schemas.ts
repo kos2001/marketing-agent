@@ -6,6 +6,21 @@ import { z } from "zod";
  * undefined 접근)을 막는다 — 이 세션에서만 CycleReport 모양이 세 번 바뀌었다.
  */
 
+export const SourceTypeSchema = z.enum([
+  "email", "social", "crm", "analytics", "customer_feedback", "news", "upload", "manual",
+]);
+
+export const SOURCE_TYPE_LABEL: Record<z.infer<typeof SourceTypeSchema>, string> = {
+  email: "이메일 캠페인",
+  social: "소셜미디어",
+  crm: "CRM/영업 파이프라인",
+  analytics: "웹/앱 애널리틱스",
+  customer_feedback: "고객 피드백/VoC",
+  news: "뉴스/경쟁사 동향",
+  upload: "업로드 문서",
+  manual: "직접 입력",
+};
+
 export const CitationSchema = z.object({
   quote: z.string(),
   source_id: z.string(),
@@ -142,6 +157,7 @@ export const CycleReportSchema = z.object({
 export const AddSourceResponseSchema = z.object({ id: z.string() });
 export const CycleListSchema = z.array(z.string());
 
+export type SourceType = z.infer<typeof SourceTypeSchema>;
 export type Citation = z.infer<typeof CitationSchema>;
 export type DiagnosisItem = z.infer<typeof DiagnosisItemSchema>;
 export type OpportunityRiskItem = z.infer<typeof OpportunityRiskItemSchema>;

@@ -4,12 +4,22 @@ from pydantic import BaseModel, Field
 
 VerifiedStatus = Literal["confirmed", "needs_review", "unfounded"]
 
+# ~/gitspace/mi-report(사내 시장정보 리포트 하네스)의 SourceType 패턴을 영업/
+# 마케팅 도메인에 맞게 옮긴 것 — mi-report는 edm/confluence/sec/dart/hankyung/
+# news/broker/consensus/upload를 쓴다(재무·공시·뉴스 중심). 이 프로젝트는
+# 영업/마케팅팀이 실제로 다루는 채널로 바꿨다. 외부 API 연동(자동 수집)은
+# 하지 않는다 — 사용자가 붙여넣거나 업로드한 텍스트에 이 태그만 붙인다.
+SourceType = Literal[
+    "email", "social", "crm", "analytics", "customer_feedback", "news", "upload", "manual"
+]
+
 
 class SourceDoc(BaseModel):
     id: str
     cycle_id: str
     title: str
     text: str
+    source_type: SourceType = "manual"
 
 
 class Citation(BaseModel):

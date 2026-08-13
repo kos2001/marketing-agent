@@ -8,7 +8,7 @@ from pydantic import BaseModel
 from .config import Settings
 from .storage import Store
 from .llm import ChatClient, HttpChatClient
-from .schemas import SourceDoc, CycleReport
+from .schemas import SourceDoc, SourceType, CycleReport
 from .orchestrator import run_pipeline
 from .demo_fixture import seed_demo_data
 
@@ -42,6 +42,7 @@ class SourceIn(BaseModel):
     cycle_id: str
     title: str
     text: str
+    source_type: SourceType = "manual"
 
 
 @app.get("/health")
@@ -49,13 +50,26 @@ def health():
     return {"status": "ok"}
 
 
+@app.get("/source-types")
+def source_types():
+    """어떤 종류의 소스를 태깅할 수 있는지 프런트가 조회하는 라우트."""
+    from typing import get_args
+    return list(get_args(SourceType))
+
+
 @app.post("/sources")
 def add_source(payload: SourceIn, store: Store = Depends(get_store)):
     doc = SourceDoc(
-        id=f"s-{uuid.uuid4().hex[:8]}", cycle_id=payload.cycle_id, title=payload.title, text=payload.text
+        id=f"s-{uuid.uuid4().hex[:8]}", cycle_id=payload.cycle_id, title=payload.title, text=payload.text,
+        source_type=payload.source_type,
     )
     store.add_source(doc)
     return {"id": doc.id}
+
+
+@app.get("/sources/{cycle_id}", response_model=list[SourceDoc])
+def get_sources(cycle_id: str, store: Store = Depends(get_store)):
+    return store.sources_for_cycle(cycle_id)
 
 
 @app.post("/pipeline/run", response_model=CycleReport)
