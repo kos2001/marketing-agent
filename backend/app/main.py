@@ -8,10 +8,11 @@ from pydantic import BaseModel
 from .config import Settings
 from .storage import Store
 from .llm import ChatClient, HttpChatClient
-from .schemas import SourceDoc, SourceType, CycleReport
+from .schemas import SourceDoc, SourceType, SearchResult, CycleReport
 from .orchestrator import run_pipeline
 from .demo_fixture import seed_demo_data
 from .doctext import extract_text, UnsupportedDocumentError, SUPPORTED_EXTENSIONS
+from . import embeddings, search as search_mod
 
 _MAX_UPLOAD_BYTES = 10 * 1024 * 1024  # 10MB — 텍스트 문서 기준으로 충분히 넉넉한 상한
 
@@ -67,7 +68,19 @@ def add_source(payload: SourceIn, store: Store = Depends(get_store)):
         source_type=payload.source_type,
     )
     store.add_source(doc)
+    search_mod.index_embedding(store, doc)
     return {"id": doc.id}
+
+
+@app.get("/search", response_model=list[SearchResult])
+def search(q: str, cycle_id: str | None = None, limit: int = 10, store: Store = Depends(get_store)):
+    """BM25(+MA_EMBEDDINGS=1이면 임베딩) 하이브리드 검색 — app/search.py 참고."""
+    return search_mod.hybrid_search(store, q, cycle_id=cycle_id, limit=limit)
+
+
+@app.get("/search-status")
+def search_status():
+    return {"embeddings_enabled": embeddings.enabled(), "embeddings_available": embeddings.available()}
 
 
 @app.get("/upload-formats")
@@ -100,6 +113,7 @@ async def upload_source(
         source_type=source_type,
     )
     store.add_source(doc)
+    search_mod.index_embedding(store, doc)
     return {"id": doc.id, "extracted_chars": len(text)}
 
 

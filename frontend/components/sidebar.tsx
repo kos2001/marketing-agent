@@ -14,6 +14,7 @@ const nav: NavItem[] = [
   { href: "/sources", label: "수집 자료", icon: "⬇", exact: true },
   // 수집 자료 하위: 수집 결과 요약 (mi-report의 /collection/results 패턴)
   { href: "/sources/results", label: "수집 결과", icon: "∑", exact: true, indent: true },
+  { href: "/search", label: "검색", icon: "⌕" },
   { href: "/diagnosis", label: "현황진단", icon: "▤" },
   { href: "/strategy", label: "전략 / 타임라인", icon: "≡" },
   { href: "/actions", label: "Action Items", icon: "☑" },

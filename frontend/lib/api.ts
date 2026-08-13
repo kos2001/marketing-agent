@@ -2,10 +2,14 @@ import {
   AddSourceResponseSchema,
   CycleListSchema,
   CycleReportSchema,
+  SearchResultListSchema,
+  SearchStatusSchema,
   SourceDocListSchema,
   UploadFormatsSchema,
   UploadSourceResponseSchema,
   type CycleReport,
+  type SearchResult,
+  type SearchStatus,
   type SourceDoc,
   type SourceType,
 } from "@/lib/schemas";
@@ -30,6 +34,8 @@ export type {
   CycleReport,
   SourceType,
   SourceDoc,
+  SearchResult,
+  SearchStatus,
 } from "@/lib/schemas";
 
 const BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8012";
@@ -98,4 +104,18 @@ export async function uploadSourceFile(
     throw new Error(detail?.detail || `문서 업로드 실패: ${res.status}`);
   }
   return UploadSourceResponseSchema.parse(await res.json());
+}
+
+export async function search(query: string, cycleId?: string, limit = 10): Promise<SearchResult[]> {
+  const params = new URLSearchParams({ q: query, limit: String(limit) });
+  if (cycleId) params.set("cycle_id", cycleId);
+  const res = await fetch(`${BASE}/search?${params.toString()}`);
+  if (!res.ok) throw new Error(`검색 실패: ${res.status}`);
+  return SearchResultListSchema.parse(await res.json());
+}
+
+export async function getSearchStatus(): Promise<SearchStatus> {
+  const res = await fetch(`${BASE}/search-status`);
+  if (!res.ok) throw new Error(`검색 상태 조회 실패: ${res.status}`);
+  return SearchStatusSchema.parse(await res.json());
 }

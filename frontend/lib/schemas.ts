@@ -168,8 +168,24 @@ export const UploadSourceResponseSchema = z.object({ id: z.string(), extracted_c
 export const CycleListSchema = z.array(z.string());
 export const UploadFormatsSchema = z.array(z.string());
 
+export const SearchResultSchema = z.object({
+  id: z.string(),
+  cycle_id: z.string(),
+  title: z.string(),
+  source_type: SourceTypeSchema,
+  snippet: z.string(),
+});
+export const SearchResultListSchema = z.array(SearchResultSchema);
+
+export const SearchStatusSchema = z.object({
+  embeddings_enabled: z.boolean(),
+  embeddings_available: z.boolean(),
+});
+
 export type SourceType = z.infer<typeof SourceTypeSchema>;
 export type SourceDoc = z.infer<typeof SourceDocSchema>;
+export type SearchResult = z.infer<typeof SearchResultSchema>;
+export type SearchStatus = z.infer<typeof SearchStatusSchema>;
 export type Citation = z.infer<typeof CitationSchema>;
 export type DiagnosisItem = z.infer<typeof DiagnosisItemSchema>;
 export type OpportunityRiskItem = z.infer<typeof OpportunityRiskItemSchema>;

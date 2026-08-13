@@ -104,6 +104,30 @@ MA_LLM_MODEL=marketing-agent
 허용적 라이선스(BSD/MIT)만 골랐다. 스캔 PDF·OCR·xlsx는 범위 밖이다(추출된
 텍스트가 비어 있으면 422로 거부한다 — 빈 리포트를 만들지 않는다).
 
+### 검색 — BM25 + 임베딩 벡터 하이브리드 색인
+
+`GET /search?q=...&cycle_id=...`(사이드바 "검색" 페이지)가 회차를 넘나들며
+수집 자료를 찾는다. `~/gitspace/mi-report`의 검색 아키텍처를 그대로
+옮겼다:
+
+- **BM25 (항상 동작)**: SQLite 내장 FTS5(`sources_fts` 가상 테이블) — 추가
+  의존성 없음. `add_source`가 호출될 때마다 `sources`와 `sources_fts`를
+  같은 트랜잭션에서 갱신해 실시간으로 색인된다.
+- **한국어 접두(prefix) 매칭**: FTS5 기본 토크나이저는 형태소 분석을 하지
+  않아 질의 "오픈율"이 원문 토큰 "오픈율이"(조사 포함)와 정확히 일치하지
+  않으면 매칭되지 않는다 — 실제로 처음 구현했을 때 이 문제로 테스트가
+  실패했다. mi-report의 `_fts_match`(조사·어미는 어간 뒤에 붙는 접미사이므로
+  질의 토큰을 접두(`"토큰"*`)로 매칭)를 그대로 옮겨 고쳤다.
+- **의미 임베딩 (opt-in, 기본 꺼짐)**: `fastembed`(ONNX, 로컬 실행 — 외부
+  API 호출·데이터 유출 없음)로 다국어 임베딩을 낸다. `pip install -e
+  ".[embeddings]"`로 설치하고 `MA_EMBEDDINGS=1`로 켠다(기본 Docker 이미지에는
+  포함하지 않는다 — 모델이 첫 사용 시 ONNX 파일을 내려받아 이미지가 커진다).
+  켜져 있으면 BM25 결과와 벡터 코사인 유사도 결과를 **Reciprocal Rank
+  Fusion(RRF)**으로 합친다. 꺼져 있거나 로드에 실패하면 조용히 BM25 단독
+  검색으로 폴백한다 — 검색 기능이 임베딩 장애로 죽지 않는다.
+
+`GET /search-status`로 임베딩이 켜져 있는지 프런트가 확인한다.
+
 ## 아키텍처
 
 원문 업로드 → 정규화 → 병렬 진단(D1 현황진단 ∥ D2 기회·리스크 ∥ D3 Critical
@@ -227,7 +251,9 @@ backend/app/
   llm.py                # ChatClient 프로토콜 + HTTP 구현 + JSON 추출
   grounding.py           # 축자 인용 대조
   doctext.py              # 업로드 문서(txt/md/pdf/docx/pptx) 텍스트 추출
-  storage.py                # SQLite 저장소
+  search.py                # BM25+임베딩 하이브리드 검색 (RRF 결합)
+  embeddings.py              # fastembed 로컬 임베딩 (opt-in, MA_EMBEDDINGS=1)
+  storage.py                   # SQLite 저장소 (FTS5 색인 포함)
   agents_diagnosis.py      # D1/D2/D3, V, V2
   agents_timeline.py        # T1 (반박 검증 포함)
   agents_summary.py          # SUMMARY (현황진단 종합: Executive Summary 등)
@@ -248,7 +274,8 @@ frontend/
   app/page.tsx                      # 대시보드
   app/sources/page.tsx                # 수집 자료 (자료 추가 + 목록)
   app/sources/results/page.tsx          # 수집 결과 (KPI + 소스 종류별 집계)
-  app/diagnosis/page.tsx                  # 현황진단
+  app/search/page.tsx                     # 검색 (BM25/하이브리드)
+  app/diagnosis/page.tsx                    # 현황진단
   app/strategy/page.tsx                     # 전략/타임라인
   app/actions/page.tsx                        # Action Items
   app/history/page.tsx                          # 회차 히스토리

@@ -18,6 +18,11 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = ["pytest>=8", "pytest-asyncio>=0.23"]
+# app/embeddings.py의 의미 검색 백엔드. opt-in인 이유: fastembed는 첫 사용 시
+# ONNX 모델(~100MB)을 내려받는다 — 기본 설치·기본 Docker 이미지는 이 비용을
+# 물지 않는다. 설치 후 MA_EMBEDDINGS=1로 켠다. BM25(SQLite 내장 FTS5)는
+# 이 extras 없이 항상 동작한다.
+embeddings = ["fastembed>=0.3"]
 
 [tool.setuptools]
 # data/(런타임 SQLite)와 profiles/(hermes SOUL.md) 디렉터리가 backend/ 아래

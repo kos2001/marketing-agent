@@ -26,6 +26,7 @@ from .schemas import (
     CycleReport,
 )
 from .storage import Store
+from . import search as search_mod
 
 DEMO_CYCLE_ID = "demo-2026-W30"
 
@@ -215,4 +216,5 @@ def seed_demo_data(store: Store) -> None:
     if store.list_cycles():
         return
     store.add_source(DEMO_SOURCE)
+    search_mod.index_embedding(store, DEMO_SOURCE)
     store.save_report(DEMO_REPORT)

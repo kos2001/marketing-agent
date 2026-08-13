@@ -22,6 +22,16 @@ class SourceDoc(BaseModel):
     source_type: SourceType = "manual"
 
 
+class SearchResult(BaseModel):
+    """BM25(+임베딩) 하이브리드 검색 결과 항목 — app/search.py 참고."""
+
+    id: str
+    cycle_id: str
+    title: str
+    source_type: SourceType
+    snippet: str
+
+
 class Citation(BaseModel):
     quote: str
     source_id: str

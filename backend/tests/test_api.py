@@ -168,3 +168,39 @@ def test_upload_source_rejects_empty_extracted_text(client):
     files = {"file": ("empty.txt", b"   \n  ", "text/plain")}
     resp = client.post("/sources/upload", data={"cycle_id": "c1"}, files=files)
     assert resp.status_code == 422
+
+
+def test_search_status_reports_embeddings_disabled_by_default(client, monkeypatch):
+    monkeypatch.delenv("MA_EMBEDDINGS", raising=False)
+    resp = client.get("/search-status")
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["embeddings_enabled"] is False
+    assert body["embeddings_available"] is False
+
+
+def test_search_finds_source_across_cycles(client):
+    client.post("/sources", json={"cycle_id": "c1", "title": "이메일", "text": "오픈율이 하락했다."})
+    client.post("/sources", json={"cycle_id": "c1", "title": "CRM", "text": "신규 계약이 성사되었다."})
+
+    resp = client.get("/search", params={"q": "오픈율"})
+    assert resp.status_code == 200
+    results = resp.json()
+    assert len(results) == 1
+    assert results[0]["title"] == "이메일"
+    assert "snippet" in results[0]
+
+
+def test_search_scoped_to_cycle_via_query_param(client):
+    client.post("/sources", json={"cycle_id": "c1", "title": "이메일", "text": "오픈율이 하락했다."})
+    client.post("/sources", json={"cycle_id": "c2", "title": "이메일", "text": "오픈율이 하락했다."})
+
+    resp = client.get("/search", params={"q": "오픈율", "cycle_id": "c1"})
+    results = resp.json()
+    assert len(results) == 1
+
+
+def test_search_no_match_returns_empty_list(client):
+    resp = client.get("/search", params={"q": "존재하지않는단어xyz"})
+    assert resp.status_code == 200
+    assert resp.json() == []
