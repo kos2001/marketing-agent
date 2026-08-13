@@ -154,10 +154,20 @@ export const CycleReportSchema = z.object({
   coverage_note: z.string(),
 });
 
+export const SourceDocSchema = z.object({
+  id: z.string(),
+  cycle_id: z.string(),
+  title: z.string(),
+  text: z.string(),
+  source_type: SourceTypeSchema,
+});
+export const SourceDocListSchema = z.array(SourceDocSchema);
+
 export const AddSourceResponseSchema = z.object({ id: z.string() });
 export const CycleListSchema = z.array(z.string());
 
 export type SourceType = z.infer<typeof SourceTypeSchema>;
+export type SourceDoc = z.infer<typeof SourceDocSchema>;
 export type Citation = z.infer<typeof CitationSchema>;
 export type DiagnosisItem = z.infer<typeof DiagnosisItemSchema>;
 export type OpportunityRiskItem = z.infer<typeof OpportunityRiskItemSchema>;

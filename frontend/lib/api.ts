@@ -2,8 +2,9 @@ import {
   AddSourceResponseSchema,
   CycleListSchema,
   CycleReportSchema,
-  SourceTypeSchema,
+  SourceDocListSchema,
   type CycleReport,
+  type SourceDoc,
   type SourceType,
 } from "@/lib/schemas";
 
@@ -26,6 +27,7 @@ export type {
   StrategyTimeline,
   CycleReport,
   SourceType,
+  SourceDoc,
 } from "@/lib/schemas";
 
 const BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8012";
@@ -62,4 +64,10 @@ export async function listCycles(): Promise<string[]> {
   const res = await fetch(`${BASE}/cycles`);
   if (!res.ok) throw new Error(`회차 목록 조회 실패: ${res.status}`);
   return CycleListSchema.parse(await res.json());
+}
+
+export async function getSources(cycleId: string): Promise<SourceDoc[]> {
+  const res = await fetch(`${BASE}/sources/${encodeURIComponent(cycleId)}`);
+  if (!res.ok) throw new Error(`수집 자료 조회 실패: ${res.status}`);
+  return SourceDocListSchema.parse(await res.json());
 }

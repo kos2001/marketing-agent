@@ -228,14 +228,52 @@ frontend/
   lib/schemas.ts          # zod 스키마 (백엔드 schemas.py와 1:1 대응) + 타입
   lib/api.ts               # API 클라이언트 (zod로 응답 검증)
   lib/query-provider.tsx     # TanStack QueryClientProvider
-  components/                 # UploadForm, ReportView, ui.tsx
-  app/icon.tsx                 # 파비콘 (next/og ImageResponse)
-  app/apple-icon.tsx             # Apple 터치 아이콘
-  app/page.tsx                    # 대시보드 (useQuery/useMutation)
+  lib/cycle-context.tsx       # 페이지 간 공유하는 "지금 보는 회차" 상태
+  lib/use-report.ts            # 회차의 리포트를 조회하는 공유 훅
+  components/                   # UploadForm, CyclePicker, report-sections.tsx, ui.tsx
+  app/icon.tsx                   # 파비콘 (next/og ImageResponse)
+  app/apple-icon.tsx               # Apple 터치 아이콘
+  app/page.tsx                      # 대시보드
+  app/sources/page.tsx                # 수집 자료
+  app/diagnosis/page.tsx                # 현황진단
+  app/strategy/page.tsx                   # 전략/타임라인
+  app/actions/page.tsx                      # Action Items
+  app/history/page.tsx                        # 회차 히스토리
+  app/manual/page.tsx                           # 사용 안내
 docker-compose.yml    # backend + frontend 2개 서비스, SQLite는 볼륨 하나
 backend/Dockerfile    # 멀티스테이지: 의존성 레이어 → 런타임 (tini + 비루트)
 frontend/Dockerfile   # 멀티스테이지: standalone 빌드 → 최소 런타임
 ```
+
+### 프론트엔드 페이지 구조 — mi-report 반영
+
+`~/gitspace/mi-report`(사내 시장정보 리포트 하네스)는 대시보드 하나에 모든
+걸 몰아넣지 않고, 사이드바로 데이터 수집·주제별·다이제스트·경쟁사·리포트·
+히스토리·매뉴얼을 각각의 페이지로 나눈다. 이 프로젝트도 원래 페이지 하나에
+전체 리포트를 스크롤하는 구조였는데, 그 페이지 조직 패턴을 옮겨 7개 라우트로
+나눴다:
+
+| 라우트 | mi-report의 대응 페이지 | 내용 |
+|---|---|---|
+| `/` | 대시보드 | 회차 선택, 자료 업로드, 파이프라인 실행, 총평 |
+| `/sources` | 수집 결과/수집 문서 | 이 회차에 올라온 원문(소스 종류 태그와 함께) |
+| `/diagnosis` | 주간 리포트(의 일부) | 현황진단 전 구간 |
+| `/strategy` | 주제별 History(의 일부) | 전략/타임라인 전 구간 |
+| `/actions` | 주간 리포트(의 일부) | Action Items 전 구간 |
+| `/history` | 생성물 이력 | 지금까지 생성된 모든 회차 목록 |
+| `/manual` | 사용 안내 | 사용 순서 안내 |
+
+mi-report에는 있지만 옮기지 않은 페이지: 뉴스 다이제스트·경쟁사 IR·문서
+Q&A·스케줄·VOC — 각각 뉴스 스크래핑·재무공시 연동·RAG 코퍼스·크론·VoC
+전용 워크플로가 필요해 이 프로젝트의 범위(사용자가 붙여넣은 텍스트를 그
+자리에서 진단) 밖이다. `customer_feedback` 소스 타입이 VoC 개념을 가볍게
+대신한다.
+
+페이지 간에는 `CycleProvider`(React Context)로 "지금 보는 회차"를 공유한다
+— 사이드바 이동은 `next/link`(클라이언트 사이드 라우팅)로 하므로 페이지를
+옮겨도 회차 선택이 유지된다. 각 페이지의 `useReport()`는 TanStack Query의
+같은 `["report", cycleId]` 캐시 키를 쓰므로, 같은 회차라면 페이지를 옮겨도
+다시 fetch하지 않는다.
 
 ## 2차 확장 후보 (이번 범위 아님)
 

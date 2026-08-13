@@ -1,24 +1,17 @@
 "use client";
-import { useEffect, useState } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { runPipeline, getReport } from "@/lib/api";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { runPipeline } from "@/lib/api";
+import { useCycle } from "@/lib/cycle-context";
+import { useReport } from "@/lib/use-report";
 import { UploadForm } from "@/components/UploadForm";
-import { ReportView } from "@/components/ReportView";
-import { Button, ErrorNote, PageHeader } from "@/components/ui";
-
-// 백엔드가 저장소가 비어 있을 때 채워 넣는 데모 회차(app/demo_fixture.py) —
-// 첫 화면이 빈 상태로 보이지 않도록 기본값으로 바로 불러온다.
-const DEFAULT_CYCLE_ID = "demo-2026-W30";
+import { CyclePicker } from "@/components/CyclePicker";
+import { OverviewCard } from "@/components/report-sections";
+import { Button, EmptyState, ErrorNote, PageHeader } from "@/components/ui";
 
 export default function Home() {
-  const [cycleId, setCycleId] = useState(DEFAULT_CYCLE_ID);
+  const { cycleId } = useCycle();
+  const reportQuery = useReport();
   const queryClient = useQueryClient();
-
-  const reportQuery = useQuery({
-    queryKey: ["report", cycleId],
-    queryFn: () => getReport(cycleId),
-    enabled: false,
-  });
 
   const runMutation = useMutation({
     mutationFn: () => runPipeline(cycleId),
@@ -27,55 +20,50 @@ export default function Home() {
     },
   });
 
-  // 마운트 시 데모(또는 이전에 실행된) 회차를 한 번 자동으로 불러온다.
-  useEffect(() => {
-    reportQuery.refetch();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
   const report = runMutation.data ?? reportQuery.data;
-  const error = runMutation.error ?? reportQuery.error;
-  const notFound = reportQuery.isFetched && reportQuery.data === null && !runMutation.data;
 
   return (
     <>
       <PageHeader
         title="marketing-agent"
-        description="영업/마케팅 자료를 업로드하고 현황진단·타임라인·Action Items를 생성합니다."
+        description="영업/마케팅 자료를 업로드하고 현황진단·전략/타임라인·Action Items를 생성합니다."
       />
 
+      <CyclePicker />
+
       <div className="mb-6 flex flex-wrap items-center gap-3">
-        <label className="flex items-center gap-2 text-sm text-zinc-300">
-          회차
-          <input
-            value={cycleId}
-            onChange={(e) => setCycleId(e.target.value)}
-            className="rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-1.5 text-sm text-zinc-100 outline-none focus:border-sky-500"
-          />
-        </label>
-        <Button variant="secondary" size="sm" onClick={() => reportQuery.refetch()} disabled={reportQuery.isFetching}>
-          {reportQuery.isFetching ? "불러오는 중..." : "불러오기"}
-        </Button>
-        <Button size="sm" onClick={() => runMutation.mutate()} disabled={runMutation.isPending}>
+        <Button onClick={() => runMutation.mutate()} disabled={runMutation.isPending}>
           {runMutation.isPending ? "실행 중..." : "파이프라인 실행"}
         </Button>
+        <p className="text-xs text-zinc-500">
+          왼쪽 사이드바에서 현황진단·전략/타임라인·Action Items를 각각 확인할 수 있습니다.
+        </p>
       </div>
 
       <div className="mb-6">
-        <UploadForm cycleId={cycleId} onUploaded={() => {}} />
+        <UploadForm cycleId={cycleId} onUploaded={() => reportQuery.refetch()} />
       </div>
 
-      {error && (
+      {runMutation.error && (
         <div className="mb-6">
-          <ErrorNote message={String(error)} />
+          <ErrorNote message={String(runMutation.error)} />
         </div>
       )}
-      {notFound && (
+      {reportQuery.error && (
         <div className="mb-6">
-          <ErrorNote message="이 회차의 리포트가 아직 없습니다." />
+          <ErrorNote message={String(reportQuery.error)} />
         </div>
       )}
-      {report && <ReportView report={report} />}
+
+      {report ? (
+        <OverviewCard report={report} />
+      ) : (
+        !reportQuery.isLoading && (
+          <EmptyState
+            message="이 회차의 리포트가 아직 없습니다. 자료를 추가하고 파이프라인을 실행하세요."
+          />
+        )
+      )}
     </>
   );
 }

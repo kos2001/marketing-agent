@@ -1,10 +1,22 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 
-const nav: { href: string; label: string; icon: string }[] = [
-  { href: "/", label: "대시보드", icon: "◧" },
+// mi-report(~/gitspace/mi-report/frontend/src/components/sidebar.tsx)의
+// exact/indent 패턴을 그대로 가져왔다 — exact가 없으면 하위 경로에서도
+// 부모 항목이 함께 활성화된다.
+type NavItem = { href: string; label: string; icon: string; exact?: boolean; indent?: boolean };
+
+const nav: NavItem[] = [
+  { href: "/", label: "대시보드", icon: "◧", exact: true },
+  { href: "/sources", label: "수집 자료", icon: "⬇" },
+  { href: "/diagnosis", label: "현황진단", icon: "▤" },
+  { href: "/strategy", label: "전략 / 타임라인", icon: "≡" },
+  { href: "/actions", label: "Action Items", icon: "☑" },
+  { href: "/history", label: "회차 히스토리", icon: "🗂" },
+  { href: "/manual", label: "사용 안내", icon: "ⓘ" },
 ];
 
 export function Sidebar() {
@@ -39,18 +51,22 @@ export function Sidebar() {
 
         <nav className="flex flex-col gap-1 px-3">
           {nav.map((item) => {
-            const active = pathname === item.href;
+            const active = item.exact ? pathname === item.href : pathname.startsWith(item.href);
             return (
-              <a
+              <Link
                 key={item.href}
                 href={item.href}
-                className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors ${
-                  active ? "bg-zinc-800 font-medium text-zinc-50" : "text-zinc-400 hover:bg-zinc-900 hover:text-zinc-200"
+                className={`flex items-center gap-3 rounded-lg py-2 text-sm transition-colors ${
+                  item.indent ? "pl-9 pr-3" : "px-3"
+                } ${
+                  active
+                    ? "bg-zinc-800 font-medium text-zinc-50"
+                    : "text-zinc-400 hover:bg-zinc-900 hover:text-zinc-200"
                 }`}
               >
                 <span className="w-4 text-center text-zinc-500">{item.icon}</span>
                 {item.label}
-              </a>
+              </Link>
             );
           })}
         </nav>

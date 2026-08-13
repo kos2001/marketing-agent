@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { Geist, Geist_Mono } from "next/font/google";
 import { AppShell } from "@/components/app-shell";
 import { QueryProvider } from "@/lib/query-provider";
+import { CycleProvider } from "@/lib/cycle-context";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -21,7 +22,9 @@ export default function RootLayout({ children }: { children: ReactNode }) {
     <html lang="ko">
       <body className={`${geistSans.variable} ${geistMono.variable} flex min-h-screen`}>
         <QueryProvider>
-          <AppShell>{children}</AppShell>
+          <CycleProvider>
+            <AppShell>{children}</AppShell>
+          </CycleProvider>
         </QueryProvider>
       </body>
     </html>
