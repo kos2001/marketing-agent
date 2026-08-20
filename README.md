@@ -324,6 +324,16 @@ Q&A·스케줄·VOC — 각각 뉴스 스크래핑·재무공시 연동·RAG 코
 같은 `["report", cycleId]` 캐시 키를 쓰므로, 같은 회차라면 페이지를 옮겨도
 다시 fetch하지 않는다.
 
+## 프로젝트 지식베이스 (llm-wiki)
+
+이 프로젝트의 아키텍처 개요는 `llm-wiki` Claude Code 플러그인으로도 정리해
+뒀다 — Obsidian vault(`~/ObsidianVault/03-Resources/marketing-agent/`) 안에
+백엔드·프론트엔드·하이브리드 검색·리포트 구조·배포·Git 워크플로우별로
+상호 링크된 wiki 페이지 8개가 있다. 이 저장소 자체와는 별도 git 이력으로
+관리된다(코드 저장소에는 포함되지 않음). `qmd`(임베딩 기반 wiki 검색 CLI)는
+현재 이 머신의 Node 버전과 네이티브 모듈 ABI가 맞지 않아 동작하지 않고,
+`wiki/index.md`를 직접 읽는 방식으로 대체해 두었다.
+
 ## 2차 확장 후보 (이번 범위 아님)
 
 - CRM/GA4 API 연동
